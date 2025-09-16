@@ -1,0 +1,5 @@
+1. Crear entorno de Robobo basado en Gymnasium
+- definir en él el espacio de estados y de acciones
+- definir las acciones que puede tomar el agente
+- seleccionar accion aleatoria
+- funcion step -> ver como cambia el estado y la recompensa
