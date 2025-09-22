@@ -3,3 +3,5 @@
 - definir las acciones que puede tomar el agente
 - seleccionar accion aleatoria
 - funcion step -> ver como cambia el estado y la recompensa
+
+
