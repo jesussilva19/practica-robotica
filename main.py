@@ -1,17 +1,16 @@
 import gymnasium as gym
-
 import numpy as np
-
-
-
 from robobopy.Robobo import Robobo
 from robobopy.utils.IR import IR
 from robobopy.utils.LED import LED
 from robobopy.utils.Color import Color
 from robobopy.utils.BlobColor import BlobColor
 from gymnasium import spaces
+robobo = Robobo("localhost")
+robobo.connect()
+
 class RoboboEnv(gym.Env):
-    """Entorno personalizado de Gymnasium para el robot Robobo"""
+    
     
     metadata = {"render_modes": ["human"]}
     
@@ -33,7 +32,7 @@ class RoboboEnv(gym.Env):
         self.max_steps = 200
     
     def reset(self, *, seed=None, options=None):
-        """Reinicia el entorno"""
+        
         super().reset(seed=seed)
         
         distancia = np.random.uniform(0.5, 1.0)
@@ -42,27 +41,35 @@ class RoboboEnv(gym.Env):
         
         self.steps = 0
         
-        # 🔑 Importante: devolver obs, info
+        
         return self.state, {}
     
     def step(self, action):
-        """Ejecuta una acción"""
+        robobo.wait(0.5)
+        
         distancia, angulo = self.state
         self.steps += 1
         
-        if action == 0:   # avanzar
+        if action == 0:   
             distancia -= 0.05
-        elif action == 1: # girar izq
+            print("adelante")
+            robobo.moveWheelsByTime(5, 5, 2)
+        elif action == 1: 
             angulo -= 0.1
-        elif action == 2: # girar der
+            print("izquierda")
+            robobo.moveWheelsByTime(5, -5, 2)
+        elif action == 2: 
             angulo += 0.1
-        
+            print("derecha")
+            robobo.moveWheelsByTime(-5, 5, 2)
+
         distancia = np.clip(distancia, 0.0, 1.0)
         angulo = np.clip(angulo, -1.0, 1.0)
         self.state = np.array([distancia, angulo], dtype=np.float32)
         
         # Recompensa
         reward = (1 - distancia) * 2.0 - abs(angulo)
+        print(f"Recompensa: {reward:.2f}")
         
         # Condiciones de finalización
         terminated = False
