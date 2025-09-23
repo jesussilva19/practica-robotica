@@ -24,9 +24,8 @@ class RoboboEnv(gym.Env):
         # Espacio de observaciones: 6 estados discretos
         self.observation_space = spaces.Discrete(6)
 
-        
-        # Espacio de acciones (3 posibles movimientos)
-        self.action_space = spaces.Discrete(3)
+        # Espacio de acciones (6 posibles movimientos)
+        self.action_space = spaces.Discrete(6)
         
         self.state = None
         self.steps = 0
@@ -35,7 +34,8 @@ class RoboboEnv(gym.Env):
     def reset(self, *, seed=None, options=None):
         
         super().reset(seed=seed)
-        
+        self.robobo.resetSimulation()
+
         self.state = self.observation_space.sample()
         
         self.steps = 0
