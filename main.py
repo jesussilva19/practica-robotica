@@ -1,104 +1,83 @@
 import gymnasium as gym
+from gymnasium import spaces
 import numpy as np
 from robobopy.Robobo import Robobo
 from robobopy.utils.IR import IR
-from robobopy.utils.LED import LED
-from robobopy.utils.Color import Color
 from robobopy.utils.BlobColor import BlobColor
-from gymnasium import spaces
-from torch import seed
-
-robobo = Robobo("localhost")
-robobo.connect()
-distancia = 1.0
 
 class RoboboEnv(gym.Env):
-    
-    
     metadata = {"render_modes": ["human"]}
-    
+
     def __init__(self):
         super(RoboboEnv, self).__init__()
-        
- 
-        # Espacio de observaciones: 6 estados discretos
-        self.observation_space = spaces.Discrete(6)
+        self.robobo = Robobo("localhost")
+        self.robobo.connect()
 
-        # Espacio de acciones (6 posibles movimientos)
-        self.action_space = spaces.Discrete(6)
-        
+        self.observation_space = spaces.Discrete(6)   # 6 estados: pelota relativa
+        self.action_space = spaces.Discrete(4)        # avanzar, izq, der, retro
+
         self.state = None
         self.steps = 0
         self.max_steps = 200
-    
-    def reset(self, *, seed=None, options=None):
-        
-        super().reset(seed=seed)
-        self.robobo.resetSimulation()
 
-        self.state = self.observation_space.sample()
-        
+    def reset(self, *, seed=None, options=None):
+        super().reset(seed=seed)
         self.steps = 0
+        # reiniciar sim
+        #self.Sim.resetSimulation()
         
-        
+        self.state = self._get_state()
         return self.state, {}
-    
-    
 
     def step(self, action):
-        robobo.wait(0.5)
-        
-        
         self.steps += 1
-        
-        self.state = self.observation_space.sample()
-
         if action == 0:  # avanzar
-            robobo.moveWheelsByTime(10, 10, 2)  
+            self.robobo.moveWheelsByTime(10, 10, 2)  
         elif action == 1:  # girar izquierda
-            robobo.moveWheelsByTime(0, 10, 2)
+            self.robobo.moveWheelsByTime(0, 10, 2)
         elif action == 2:  # girar derecha
-            robobo.moveWheelsByTime(10, 0, 2)
-        elif action == 3:  # retroceder
-            robobo.moveWheelsByTime(0, -10, 4)
-        elif action == 4:  # detenerse
-            robobo.moveWheelsByTime(10, 0, 4)
-        elif action == 5:  # girar 180 grados
-            robobo.moveWheelsByTime(10, -10, 4)
+            self.robobo.moveWheelsByTime(10, 0, 2)
+        elif action == 3:  
+            self.robobo.moveWheelsByTime(0, 10, 4)
+        elif action == 4:  
+            self.robobo.moveWheelsByTime(10, 0, 4)
+        elif action == 5:  
+            self.robobo.moveWheelsByTime(10, -10, 4)
+        # nuevo estado
+        self.state = self._get_state()
 
-        # Recompensa
-        
-        if self.state == 0:
-            reward = 1
-        elif self.state == 1:
-            reward = 0.5        
-        elif self.state == 2:
-            reward = 0.5
+        # recompensa
+        reward = 0
+        if self.state == 0: reward = 1
+        elif self.state in [1,2,3,4]: reward = 0.5
+        elif self.state in [3,4]: reward = 0.2
+        else: reward = -0.2
 
-        elif self.state == 3:
-            reward = 0.2
+        # comprobar distancia con IR
+        distancia = self.robobo.readIRSensor(IR.FrontC)
+        print("Distancia IR:", distancia)
+         # si está muy cerca, penalizar
+        terminated = distancia > 100
+        truncated = self.steps >= self.max_steps
 
-        elif self.state == 4:
-            reward = 0.2
-
-        else:
-            reward = 0
-
-        print(f"Recompensa: {reward:.2f}")
-        
-        # Condiciones de finalización
-        terminated = False
-        truncated = False
-        if distancia <= 0.05:
-            reward += 10.0
-            terminated = True
-        elif self.steps >= self.max_steps:
-            truncated = True
-        
         return self.state, reward, terminated, truncated, {}
-    
+
+    def _get_state(self):
+        self.robobo.setActiveBlobs(red=True, green=True, blue=False, custom=False)
+        blobs = self.robobo.readColorBlob(BlobColor.RED)
+        print("Blobs:", blobs)
+        if blobs.size==0: return 5
+        print("Pos X:", blobs.posx)
+        x = blobs.posx
+        if abs(x) < 0.1: return 0
+        elif x < -0.5: return 2
+        elif x < 0: return 1
+        elif x > 0.5: return 4
+        elif x > 0: return 3
+        return 5
+
     def render(self):
-        print(f"Estado actual: {self.state}")
-    
+        print(f"Estado: {self.state}")
+
     def close(self):
-        pass
+        self.robobo.disconnect()
