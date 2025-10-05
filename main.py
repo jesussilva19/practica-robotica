@@ -99,6 +99,26 @@ class RoboboEnv(gym.Env):
         elif 75 < x: return 4
         return 5
 
+
+    def _get_state(self):
+        
+        posiciones = [0, 20, -20, 90, -90]  
+        
+
+        self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
+
+        for i, ang in enumerate(posiciones):
+            
+            self.robobo.movePanTo(ang, 100, True)
+
+           
+            blobs = self.robobo.readColorBlob(BlobColor.RED)
+
+            if blobs.size > 0:  
+                return i  
+
+        return len(posiciones)  
+
     def render(self):
         print(f"Estado: {self.state}")
 
