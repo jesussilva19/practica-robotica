@@ -12,9 +12,9 @@ class RoboboEnv(gym.Env):
     def __init__(self):
         super(RoboboEnv, self).__init__()
         self.robobo = Robobo("localhost")
-        self.reset = RoboboSim("localhost")
+        self.sim = RoboboSim("localhost")  # Renombrado de 'reset' a 'sim'
         self.robobo.connect()
-        self.reset.connect()
+        self.sim.connect()
 
         
         self.robobo.moveTiltTo(115, 50)
@@ -30,7 +30,8 @@ class RoboboEnv(gym.Env):
         super().reset(seed=seed)
         self.steps = 0
         # reiniciar sim
-        self.reset.resetSimulation()
+        self.sim.resetSimulation()  # Ahora usa self.sim en vez de self.reset
+        self.robobo.wait(1.0)
         self.state = self._get_state()
         return self.state, {}
 
