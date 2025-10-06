@@ -4,6 +4,7 @@ import numpy as np
 from robobopy.Robobo import Robobo
 from robobopy.utils.IR import IR
 from robobopy.utils.BlobColor import BlobColor
+from robobosim.RoboboSim import RoboboSim
 
 class RoboboEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
@@ -11,7 +12,11 @@ class RoboboEnv(gym.Env):
     def __init__(self):
         super(RoboboEnv, self).__init__()
         self.robobo = Robobo("localhost")
+        self.reset = RoboboSim("localhost")
         self.robobo.connect()
+        self.reset.connect()
+
+        
         self.robobo.moveTiltTo(115, 50)
 
         self.observation_space = spaces.Discrete(6)   # 6 estados: pelota relativa
@@ -25,8 +30,7 @@ class RoboboEnv(gym.Env):
         super().reset(seed=seed)
         self.steps = 0
         # reiniciar sim
-        #self.Sim.resetSimulation()
-        
+        self.reset.resetSimulation()
         self.state = self._get_state()
         return self.state, {}
 
