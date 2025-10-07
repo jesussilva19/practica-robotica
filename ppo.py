@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import EvalCallback
 import os
 
 
-from prueba import RoboboEnv  
+from main import RoboboEnv  
 
 
 log_dir = "./robobo_logs/"
@@ -21,7 +21,7 @@ model = PPO(
     env=env,
     verbose=1,
     learning_rate=3e-4,
-    n_steps=1024,
+    n_steps=64,
     batch_size=64,
     n_epochs=10,
     gamma=0.99,
@@ -32,14 +32,14 @@ eval_callback = EvalCallback(
     env,
     best_model_save_path=log_dir,
     log_path=log_dir,
-    eval_freq=5000,   
+    eval_freq=64,   
     deterministic=True,
     render=False,
 )
 
 # Entrenar el modelo
-TIMESTEPS = 50000 
-model.learn(total_timesteps=TIMESTEPS, callback=eval_callback)
+TIMESTEPS = 64
+model.learn(total_timesteps=TIMESTEPS, callback=eval_callback, progress_bar=True)
 
 # Guardar modelo entrenado
 model.save(log_dir + "ppo_robobo")

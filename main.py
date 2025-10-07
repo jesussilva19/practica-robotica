@@ -12,10 +12,9 @@ class RoboboEnv(gym.Env):
     def __init__(self):
         super(RoboboEnv, self).__init__()
         self.robobo = Robobo("localhost")
-        self.sim = RoboboSim("localhost")  # Renombrado de 'reset' a 'sim'
+        self.sim = RoboboSim("localhost") 
         self.robobo.connect()
         self.sim.connect()
-
         
         self.robobo.moveTiltTo(115, 50)
 
@@ -24,31 +23,46 @@ class RoboboEnv(gym.Env):
 
         self.state = None
         self.steps = 0
-        self.max_steps = 200
+        self.max_steps = 64
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
         self.steps = 0
         # reiniciar sim
-        self.sim.resetSimulation()  # Ahora usa self.sim en vez de self.reset
+        self.sim.resetSimulation()  
         self.robobo.wait(1.0)
+        self.robobo.moveTiltTo(115, 50)
         self.state = self._get_state()
         return self.state, {}
 
 
     def _avoid_obstacle(self):
-
-        if (self.robobo.readIRSensor(IR.FrontC) > 100 or 
-            self.robobo.readIRSensor(IR.FrontL) > 300 or 
-            self.robobo.readIRSensor(IR.FrontR) > 300):
-            
-            # Maniobra de evasión: retroceder y girar
-            self.robobo.moveWheelsByTime(-20, -20, 1)  # Retroceder
-            self.robobo.moveWheelsByTime(30, -30, 1)   # Girar a la izquierda
-            self.robobo.wait(0.5)                      # Esperar
-            return True  
-        return False  
-
+        # Leer sensores IR
+        front_c = self.robobo.readIRSensor(IR.FrontC)
+        front_l = self.robobo.readIRSensor(IR.FrontL)
+        front_r = self.robobo.readIRSensor(IR.FrontR)
+        
+        # Verificar si vemos el blob rojo (el objetivo)
+        blob = self.robobo.readColorBlob(BlobColor.RED)
+        veo_objetivo = blob.size > 2  # Si el blob es visible y grande
+        objetivo_centrado = 45 <= blob.posx <= 55 if blob.size > 0 else False
+        
+        # Si hay obstáculo PERO es el objetivo centrado, NO evadir
+        if veo_objetivo and objetivo_centrado and front_c > 100:
+            print("🎯 Objetivo detectado - NO evadir")
+            return False
+        
+        # Si hay obstáculo y NO es el objetivo, evadir
+        if (front_c > 100 or front_l > 300 or front_r > 300):
+            if not veo_objetivo:  # Solo evadir si NO vemos el objetivo
+                print("⚠️ Obstáculo detectado - Evadiendo")
+                self.robobo.moveWheelsByTime(-20, -20, 1)
+                self.robobo.moveWheelsByTime(30, -30, 1)
+                self.robobo.wait(0.5)
+                return True
+        
+        return False
+    
     def step(self, action):
         self.steps += 1
         
@@ -76,33 +90,23 @@ class RoboboEnv(gym.Env):
         if self.state == 0: reward = 1*self.robobo.readColorBlob(BlobColor.RED).size
         elif self.state in [1,2]: reward = 0.5*self.robobo.readColorBlob(BlobColor.RED).size
         elif self.state in [3,4]: reward = 0.2*self.robobo.readColorBlob(BlobColor.RED).size
-        else: reward = -0.2
+        else: reward = -0.5
 
         # comprobar distancia con IR
         distancia = self.robobo.readIRSensor(IR.FrontC)
+        blob_size = self.robobo.readColorBlob(BlobColor.RED).size
+        objetivo_centrado = 45 <= self.robobo.readColorBlob(BlobColor.RED).posx <= 55
+        print("\n--- Step", self.steps, "---")
         print("Distancia IR:", distancia)
         print("Tamaño Blob:", self.robobo.readColorBlob(BlobColor.RED).size)
         print("Recompensa:", reward)
         print("acción:", action)
-         # si está muy cerca, penalizar
-        terminated = distancia > 100 and self.robobo.readColorBlob(BlobColor.RED).size>10
         truncated = self.steps >= self.max_steps
 
-        return self.state, reward, terminated, truncated, {}
+        # Termina si está cerca Y ve el objetivo grande Y está centrado
+        terminated = (distancia > 100 and blob_size > 10 and objetivo_centrado)
 
-    def _get_state(self):
-        self.robobo.setActiveBlobs(red=True, green=True, blue=False, custom=False)
-        blobs = self.robobo.readColorBlob(BlobColor.RED)
-        print("Blobs:", blobs)
-        if blobs.size==0: return 5
-        print("Pos X:", blobs.posx)
-        x = blobs.posx
-        if 45 <= x <= 55: return 0
-        elif 25 <= x < 45: return 1
-        elif 55 < x <= 75: return 2
-        elif 1<= x < 25: return 3
-        elif 75 < x: return 4
-        return 5
+        return self.state, reward, terminated, truncated, {}
 
 
     def _get_state(self):
