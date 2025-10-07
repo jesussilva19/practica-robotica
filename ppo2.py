@@ -43,7 +43,7 @@ model = PPO(
 
 # Callback para guardar checkpoints periódicos
 checkpoint_callback = CheckpointCallback(
-    save_freq=256,  # Guardar cada 500 pasos
+    save_freq=3605,  # Guardar cada 500 pasos
     save_path=models_dir,
     name_prefix="ppo_robobo_checkpoint",
     save_replay_buffer=False,
@@ -62,7 +62,7 @@ eval_callback = EvalCallback(
 )
 
 # Entrenar el modelo
-TOTAL_TIMESTEPS = 256  # Aumentado significativamente
+TOTAL_TIMESTEPS = 3600  # Aumentado significativamente
 
 print("\nIniciando entrenamiento...")
 print(f"Total de timesteps: {TOTAL_TIMESTEPS}")
