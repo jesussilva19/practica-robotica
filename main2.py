@@ -22,7 +22,7 @@ class RoboboEnv(gym.Env):
         self.sim.connect()
         
         # Configuración inicial de la cámara
-        self.robobo.moveTiltTo(120, 50)
+        self.robobo.moveTiltTo(200, 50)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
         # Espacios de observación y acción
@@ -35,7 +35,7 @@ class RoboboEnv(gym.Env):
         self.max_steps = max_steps
         
         # Constantes para detección
-        self.OBSTACLE_THRESHOLD_FRONT = 100
+        self.OBSTACLE_THRESHOLD_FRONT = 50
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
         self.BLOB_SIZE_GOAL = 10
@@ -55,45 +55,71 @@ class RoboboEnv(gym.Env):
         self.robobo.wait(1.0)
         
         # Reconfigurar cámara
-        self.robobo.moveTiltTo(120, 50)
+        self.robobo.moveTiltTo(200, 50)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
         
         self.state = self._get_state()
         return self.state, {}
 
     def _is_goal_centered(self, blob):
-        """Verifica si el objetivo está centrado en la visión."""
+        """Verifica si el objetivo está centrado en la visión.
         if blob.size == 0:
             return False
-        return self.CENTER_MIN <= blob.posx <= self.CENTER_MAX
+        return self.CENTER_MIN <= blob.posx <= self.CENTER_MAX"""
+        return True
 
+    def _is_at_goal(self):
+        """
+        Verifica si el robot ha alcanzado el objetivo.
+        Retorna True si está en el objetivo, False en caso contrario.
+        """
+        blob = self.robobo.readColorBlob(BlobColor.RED)
+        distancia = self.robobo.readIRSensor(IR.FrontC)
+        objetivo_centrado = self._is_goal_centered(blob)
+        
+        # Condiciones para considerar que llegó al objetivo:
+        # 1. El blob es lo suficientemente grande
+        # 2. Está centrado en la visión
+        # 3. La distancia es muy cercana
+        at_goal = (blob.size > self.BLOB_SIZE_GOAL and 
+                   objetivo_centrado and 
+                   distancia > self.OBSTACLE_THRESHOLD_FRONT)
+        
+        return at_goal
+    
     def _avoid_obstacle(self):
         """
         Detecta obstáculos y realiza maniobra de evasión si es necesario.
         Retorna True si evadió un obstáculo, False en caso contrario.
         """
+        # PRIMERO: Verificar si estamos en el objetivo
+        if self._is_at_goal():
+            print("🎯 En el objetivo - NO evadir")
+            return False
+        
         # Leer sensores IR
         front_c = self.robobo.readIRSensor(IR.FrontC)
         front_l = self.robobo.readIRSensor(IR.FrontL)
         front_r = self.robobo.readIRSensor(IR.FrontR)
         
-        # Verificar si vemos el objetivo
+        # Verificar si vemos el objetivo (pero no estamos en él)
         blob = self.robobo.readColorBlob(BlobColor.RED)
         veo_objetivo = blob.size > self.BLOB_SIZE_MIN
         objetivo_centrado = self._is_goal_centered(blob)
         
-        # Si el obstáculo ES el objetivo centrado, no evadir
-        if veo_objetivo and objetivo_centrado and front_c > self.OBSTACLE_THRESHOLD_FRONT:
-            print("Objetivo detectado centrado - Avanzando")
+        # Si vemos el objetivo grande y centrado, asumimos que ES el obstáculo detectado
+        # y NO evadimos (queremos acercarnos)
+        if veo_objetivo and objetivo_centrado and blob.size > 5:
+            print("🎯 Objetivo visible y centrado - Acercándose")
             return False
         
-        # Si hay obstáculo y NO es el objetivo, evadir
+        # Si hay obstáculo y NO vemos bien el objetivo, evadir
         has_obstacle = (front_c > self.OBSTACLE_THRESHOLD_FRONT or 
                        front_l > self.OBSTACLE_THRESHOLD_SIDE or 
                        front_r > self.OBSTACLE_THRESHOLD_SIDE)
         
-        if has_obstacle and not veo_objetivo:
-            print("Obstáculo detectado - Evadiendo")
+        if has_obstacle:
+            print("⚠️ Obstáculo detectado - Evadiendo")
             self.robobo.moveWheelsByTime(-20, -20, 1)  # Retroceder
             self.robobo.moveWheelsByTime(30, -30, 1)   # Girar
             self.robobo.wait(0.5)
@@ -120,6 +146,7 @@ class RoboboEnv(gym.Env):
         
         # Ejecutar acción solo si no se evadió obstáculo
         if not evaded:
+            action = 0
             if action == 0:  # Avanzar
                 self.robobo.moveWheelsByTime(10, 10, 2)  
             elif action == 1:  # Girar izquierda leve
@@ -131,7 +158,7 @@ class RoboboEnv(gym.Env):
             elif action == 4:  # Girar derecha fuerte
                 self.robobo.moveWheelsByTime(5, 0, 4)
             elif action == 5:  # Giro 180°
-                self.robobo.moveWheelsByTime(10, -10, 4)
+                self.robobo.moveWheelsByTime(10, -10, 3.5)
             
         # Obtener nuevo estado
         self.state = self._get_state()
@@ -139,10 +166,19 @@ class RoboboEnv(gym.Env):
         # Calcular recompensa basada en estado y tamaño del blob
         reward = self._calculate_reward()
 
-        # Verificar condiciones de terminación
+        # Verificar si alcanzó el objetivo
+        terminated = self._is_at_goal()
+        
+        if terminated:
+            print("🎉 ¡OBJETIVO ALCANZADO! 🎉")
+            reward += 200  # Gran recompensa por completar el objetivo
+        
+        # Verificar condiciones de terminación por tiempo
+        truncated = self.steps >= self.max_steps
+        
+        # Obtener información para logging
         blob = self.robobo.readColorBlob(BlobColor.RED)
         distancia = self.robobo.readIRSensor(IR.FrontC)
-        objetivo_centrado = self._is_goal_centered(blob)
         
         # Logging
         print(f"\n--- Step {self.steps} ---")
@@ -150,17 +186,11 @@ class RoboboEnv(gym.Env):
         print(f"Estado: {self.state}")
         print(f"Distancia IR: {distancia}")
         print(f"Tamaño Blob: {blob.size}")
+        print(f"Blob Pos X: {blob.posx}")
         print(f"Recompensa: {reward:.2f}")
         
-        # Condiciones de finalización
-        truncated = self.steps >= self.max_steps
-        terminated = (distancia > self.OBSTACLE_THRESHOLD_FRONT and 
-                     blob.size > self.BLOB_SIZE_GOAL and 
-                     objetivo_centrado)
-        
-        if terminated:
-            print("¡Objetivo alcanzado!")
-            reward += 10  # Bonus por completar objetivo
+        if truncated:
+            print("⏱️ Tiempo máximo alcanzado - Episodio truncado")
 
         return self.state, reward, terminated, truncated, {}
 
@@ -220,6 +250,6 @@ class RoboboEnv(gym.Env):
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print("Conexiones cerradas correctamente")
+            print("✅ Conexiones cerradas correctamente")
         except Exception as e:
-            print(f"Error al cerrar conexiones: {e}")
+            print(f"⚠️ Error al cerrar conexiones: {e}")
