@@ -21,8 +21,8 @@ model = PPO(
     env=env,
     verbose=1,
     learning_rate=3e-4,
-    n_steps=64,
-    batch_size=64,
+    n_steps=25,
+    batch_size=40,
     n_epochs=10,
     gamma=0.99,
 )
@@ -32,15 +32,15 @@ eval_callback = EvalCallback(
     env,
     best_model_save_path=log_dir,
     log_path=log_dir,
-    eval_freq=64,   
+    eval_freq=126,   
     deterministic=True,
     render=False,
 )
 
 # Entrenar el modelo
-TIMESTEPS = 64
+TIMESTEPS = 125
 model.learn(total_timesteps=TIMESTEPS, callback=eval_callback, progress_bar=True)
 
 # Guardar modelo entrenado
 model.save(log_dir + "ppo_robobo")
-print("✅ Modelo entrenado y guardado en", log_dir)
+print(" Modelo entrenado y guardado en", log_dir)

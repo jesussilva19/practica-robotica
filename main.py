@@ -16,14 +16,14 @@ class RoboboEnv(gym.Env):
         self.robobo.connect()
         self.sim.connect()
         
-        self.robobo.moveTiltTo(115, 50)
+        self.robobo.moveTiltTo(120, 50)
 
         self.observation_space = spaces.Discrete(6)   # 6 estados: pelota relativa
         self.action_space = spaces.Discrete(6)        # avanzar, izq, der, retro
 
         self.state = None
         self.steps = 0
-        self.max_steps = 64
+        self.max_steps = 30
 
     def reset(self, *, seed=None, options=None):
         super().reset(seed=seed)
@@ -49,13 +49,13 @@ class RoboboEnv(gym.Env):
         
         # Si hay obstáculo PERO es el objetivo centrado, NO evadir
         if veo_objetivo and objetivo_centrado and front_c > 100:
-            print("🎯 Objetivo detectado - NO evadir")
+            print(" Objetivo detectado - NO evadir")
             return False
         
         # Si hay obstáculo y NO es el objetivo, evadir
         if (front_c > 100 or front_l > 300 or front_r > 300):
             if not veo_objetivo:  # Solo evadir si NO vemos el objetivo
-                print("⚠️ Obstáculo detectado - Evadiendo")
+                print(" Obstáculo detectado - Evadiendo")
                 self.robobo.moveWheelsByTime(-20, -20, 1)
                 self.robobo.moveWheelsByTime(30, -30, 1)
                 self.robobo.wait(0.5)
@@ -70,7 +70,7 @@ class RoboboEnv(gym.Env):
         if not self._avoid_obstacle():
             # Solo ejecutar la acción si no hay obstáculos
             if action == 0:  # avanzar
-                self.robobo.moveWheelsByTime(10, 10, 2)  
+                self.robobo.moveWheelsByTime(5, 5, 2)  
             elif action == 1:  # girar izquierda
                 self.robobo.moveWheelsByTime(0, 5, 2)
             elif action == 2:  # girar derecha
@@ -80,7 +80,7 @@ class RoboboEnv(gym.Env):
             elif action == 4:  
                 self.robobo.moveWheelsByTime(5, 0, 4)
             elif action == 5:  
-                self.robobo.moveWheelsByTime(10, -10, 4)
+                self.robobo.moveWheelsByTime(12, -12, 4)
             
         # nuevo estado
         self.state = self._get_state()
