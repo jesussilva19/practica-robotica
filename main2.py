@@ -148,7 +148,7 @@ class RoboboEnv(gym.Env):
         if not evaded:
             action = 0
             if action == 0:  # Avanzar
-                self.robobo.moveWheelsByTime(10, 10, 2)  
+                self.robobo.moveWheelsByTime(5, 5, 2)  
             elif action == 1:  # Girar izquierda leve
                 self.robobo.moveWheelsByTime(0, 5, 2)
             elif action == 2:  # Girar derecha leve
