@@ -43,7 +43,7 @@ model = PPO(
 
 # Callback para guardar checkpoints periódicos
 checkpoint_callback = CheckpointCallback(
-    save_freq=3605,  # Guardar cada 500 pasos
+    save_freq=1000,  # Guardar cada 500 pasos
     save_path=models_dir,
     name_prefix="ppo_robobo_checkpoint",
     save_replay_buffer=False,

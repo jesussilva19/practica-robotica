@@ -146,7 +146,6 @@ class RoboboEnv(gym.Env):
         
         # Ejecutar acción solo si no se evadió obstáculo
         if not evaded:
-            action = 0
             if action == 0:  # Avanzar
                 self.robobo.moveWheelsByTime(5, 5, 2)  
             elif action == 1:  # Girar izquierda leve
