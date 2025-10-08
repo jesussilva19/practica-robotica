@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 import os
 from datetime import datetime
-from main2 import RoboboEnv
+from main3 import RoboboEnv
 
 # Configuración de directorios
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
