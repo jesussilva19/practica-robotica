@@ -26,8 +26,8 @@ class RoboboEnv(gym.Env):
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
         # Espacios de observación y acción
-        self.observation_space = spaces.Discrete(6)  # 6 estados según posición del objetivo
-        self.action_space = spaces.Discrete(6)       # 6 acciones de movimiento
+        self.observation_space = spaces.Discrete(14)  # 6 estados según posición del objetivo
+        self.action_space = spaces.Discrete(14)       # 6 acciones de movimiento
 
         # Variables de estado
         self.state = None
@@ -35,7 +35,7 @@ class RoboboEnv(gym.Env):
         self.max_steps = max_steps
         
         # Constantes para detección
-        self.OBSTACLE_THRESHOLD_FRONT = 50
+        self.OBSTACLE_THRESHOLD_FRONT = 30
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
         self.BLOB_SIZE_GOAL = 10
@@ -43,7 +43,7 @@ class RoboboEnv(gym.Env):
         self.CENTER_MAX = 55
         
         # Posiciones del pan para búsqueda
-        self.pan_positions = [0, 20, -20, 90, -90]
+        self.pan_positions = [0, 15, 30, 45, 60, 75, 90, -15, -30, -45, -60, -75,-90]
 
     def reset(self, *, seed=None, options=None):
         """Reinicia el entorno y retorna el estado inicial."""
@@ -146,24 +146,50 @@ class RoboboEnv(gym.Env):
         
         # Ejecutar acción solo si no se evadió obstáculo
         if not evaded:
+            
             if action == 0:  # Avanzar
                 self.robobo.moveWheelsByTime(5, 5, 2)  
             elif action == 1:  # Girar izquierda leve
-                self.robobo.moveWheelsByTime(0, 5, 2)
+                self.robobo.moveWheelsByTime(0, 2, 2)
             elif action == 2:  # Girar derecha leve
-                self.robobo.moveWheelsByTime(5, 0, 2)
+                self.robobo.moveWheelsByTime(2, 0, 2)
             elif action == 3:  # Girar izquierda fuerte
-                self.robobo.moveWheelsByTime(0, 5, 4)
+                self.robobo.moveWheelsByTime(0, 4, 2)
             elif action == 4:  # Girar derecha fuerte
-                self.robobo.moveWheelsByTime(5, 0, 4)
-            elif action == 5:  # Giro 180°
-                self.robobo.moveWheelsByTime(10, -10, 3.5)
+                self.robobo.moveWheelsByTime(4, 0, 2)
+            elif action == 5:  # Girar izquierda leve
+                self.robobo.moveWheelsByTime(0, 6, 2)
+            elif action == 6:  # Girar derecha leve
+                self.robobo.moveWheelsByTime(6, 0, 2)
+            elif action == 7:  # Girar izquierda fuerte
+                self.robobo.moveWheelsByTime(0, 8, 2)
+            elif action == 8:  # Girar derecha fuerte
+                self.robobo.moveWheelsByTime(8, 0, 2)
+            elif action == 9:  # Girar izquierda leve
+                self.robobo.moveWheelsByTime(0, 10, 2)
+            elif action == 10:  # Girar derecha leve
+                self.robobo.moveWheelsByTime(10, 0, 2)
+            elif action == 11:  # Girar izquierda fuerte
+                self.robobo.moveWheelsByTime(0, 12, 2)
+            elif action == 12:  # Girar derecha fuerte
+                self.robobo.moveWheelsByTime(12, 0, 2)
+            elif action == 13:  # Giro 180°
+                self.robobo.moveWheelsByTime(10, -10, 3.7)
             
         # Obtener nuevo estado
         self.state = self._get_state()
 
-        # Calcular recompensa basada en estado y tamaño del blob
-        reward = self._calculate_reward()
+    
+
+        reward = 0
+        if self.state == 0: reward = 3*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [1,7]: reward = 1.5*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [2,8]: reward = 1*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [3,9]: reward = 0.6*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [4,10]: reward = 0.4*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [5,11]: reward = 0.2*self.robobo.readColorBlob(BlobColor.RED).size
+        elif self.state in [6,12]: reward = 0.1*self.robobo.readColorBlob(BlobColor.RED).size
+        else: reward = -5
 
         # Verificar si alcanzó el objetivo
         terminated = self._is_at_goal()
@@ -193,19 +219,7 @@ class RoboboEnv(gym.Env):
 
         return self.state, reward, terminated, truncated, {}
 
-    def _calculate_reward(self):
-        """Calcula la recompensa basada en el estado actual y tamaño del blob."""
-        blob_size = self.robobo.readColorBlob(BlobColor.RED).size
-        
-        # Recompensas según posición del objetivo
-        if self.state == 0:  # Centrado
-            return 1.0 * blob_size
-        elif self.state in [1, 2]:  # Ligeramente descentrado
-            return 0.5 * blob_size
-        elif self.state in [3, 4]:  # Muy descentrado
-            return 0.2 * blob_size
-        else:  # No visible (estado 5)
-            return -0.5
+
 
     def _get_state(self):
         """
@@ -227,7 +241,7 @@ class RoboboEnv(gym.Env):
             if blobs.size > 0:
                 print(f"blobs.size: {blobs.size}")
                 # Retornar a posición central después de encontrar
-                self.robobo.movePanTo(0, 100, True)
+            
                 return i
         
         # Si no se encuentra en ninguna posición
@@ -239,9 +253,11 @@ class RoboboEnv(gym.Env):
             0: "Centrado",
             1: "Centro-Izquierda", 
             2: "Centro-Derecha",
-            3: "Extremo Izquierda",
-            4: "Extremo Derecha",
-            5: "No Visible"
+            3: "Izquierda",
+            4: "Derecha",
+            5: "Extremo Izquierda",
+            6: "Extremo Derecha",
+            7: "No Visible"
         }
         print(f"Estado actual: {state_names.get(self.state, 'Desconocido')} ({self.state})")
 

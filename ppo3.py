@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 import os
 from datetime import datetime
-from main2 import RoboboEnv
+from main3 import RoboboEnv
 
 # Configuración de directorios
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -43,7 +43,7 @@ model = PPO(
 
 # Callback para guardar checkpoints periódicos
 checkpoint_callback = CheckpointCallback(
-    save_freq=1000,  # Guardar cada 500 pasos
+    save_freq=3605,  # Guardar cada 500 pasos
     save_path=models_dir,
     name_prefix="ppo_robobo_checkpoint",
     save_replay_buffer=False,
