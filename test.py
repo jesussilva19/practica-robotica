@@ -3,7 +3,7 @@ Script para probar el modelo PPO entrenado con el robot Robobo.
 """
 import gymnasium as gym
 from stable_baselines3 import PPO
-from main3 import RoboboEnv
+from main4 import RoboboEnv
 import sys
 
 def test_model(model_path, n_episodes=5, render=True):
@@ -87,7 +87,7 @@ def test_model(model_path, n_episodes=5, render=True):
 def main():
     """Función principal."""
     # Puedes cambiar esta ruta al modelo que quieras probar
-    model_path = "C:\\Users\\jesus\\Desktop\\practica-robotica\\robobo_logs\\20251008_172346\\models\\ppo_robobo_interrupted.zip"
+    model_path = "C:\\Users\\jesus\\Desktop\\practica-robotica\\robobo_logs\\20251008_195435\\ppo_robobo_final.zip"
     
     # Si se proporciona ruta como argumento
     if len(sys.argv) > 1:

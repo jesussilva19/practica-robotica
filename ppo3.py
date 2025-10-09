@@ -5,7 +5,7 @@ from stable_baselines3.common.callbacks import EvalCallback, CheckpointCallback
 from stable_baselines3.common.vec_env import DummyVecEnv
 import os
 from datetime import datetime
-from main3 import RoboboEnv
+from main4 import RoboboEnv
 
 # Configuración de directorios
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -62,7 +62,7 @@ eval_callback = EvalCallback(
 )
 
 # Entrenar el modelo
-TOTAL_TIMESTEPS = 2500  # Aumentado significativamente
+TOTAL_TIMESTEPS = 3600  # Aumentado significativamente
 
 print("\nIniciando entrenamiento...")
 print(f"Total de timesteps: {TOTAL_TIMESTEPS}")
