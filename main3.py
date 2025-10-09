@@ -26,22 +26,34 @@ class RoboboEnv(gym.Env):
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
         # Espacios de observación y acción
-        self.observation_space = spaces.Discrete(14)  # 6 estados según posición del objetivo
-        self.action_space = spaces.Discrete(14)       # 6 acciones de movimiento
+        self.observation_space = spaces.Discrete(42)  # 6 estados según posición del objetivo
+        self.action_space = spaces.Discrete(6)       # 6 acciones de movimiento
 
         # Variables de estado
         self.state = None
         self.steps = 0
         self.max_steps = max_steps
+
+        # Constantes para detección de obstáculos
+        self.OBSTACLE_THRESHOLD_FRONT = 30
+        self.OBSTACLE_THRESHOLD_SIDE = 300
+        self.OBSTACLE_DANGER_ZONE = 50  # Zona de peligro para penalización
+        
         
         # Constantes para detección
         self.OBSTACLE_THRESHOLD_FRONT = 30
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
-        self.BLOB_SIZE_GOAL = 10
+        self.BLOB_SIZE_GOAL = 50
+        self.BLOB_SIZE_CLOSE = 20  # Si el blob es grande, probablemente es el objetivo cerca
         self.CENTER_MIN = 45
         self.CENTER_MAX = 55
-        
+
+        # Categorías de distancia basadas en tamaño del blob
+        self.DISTANCE_CLOSE = 30   # blob.size >= 30
+        self.DISTANCE_MEDIUM = 20   # blob.size >= 20
+        # DISTANCE_FAR: blob.size < 20
+
         # Posiciones del pan para búsqueda
         self.pan_positions = [0, 15, 30, 45, 60, 75, 90, -15, -30, -45, -60, -75,-90]
 
@@ -87,45 +99,51 @@ class RoboboEnv(gym.Env):
         
         return at_goal
     
-    def _avoid_obstacle(self):
+    def _is_approaching_goal(self):
         """
-        Detecta obstáculos y realiza maniobra de evasión si es necesario.
-        Retorna True si evadió un obstáculo, False en caso contrario.
+        Determina si el robot se está acercando al OBJETIVO (no a un obstáculo).
+        Retorna True si hay evidencia clara del objetivo rojo delante.
         """
-        # PRIMERO: Verificar si estamos en el objetivo
-        if self._is_at_goal():
-            print("🎯 En el objetivo - NO evadir")
-            return False
+        blob = self.robobo.readColorBlob(BlobColor.RED)
         
+        # Criterios para identificar que es el OBJETIVO:
+        # 1. El blob rojo es visible y de tamaño significativo
+        # 2. Está relativamente centrado (o al menos visible)
+        is_goal = (blob.size >= self.BLOB_SIZE_CLOSE and 
+                   blob.posx > 20 and blob.posx < 80)
+        
+        if is_goal:
+            print(f"🎯 Objetivo detectado delante (size: {blob.size}, posx: {blob.posx})")
+        
+        return is_goal
+    
+    def _check_collision_risk(self):
+        """
+        Verifica si hay riesgo de colisión con un OBSTÁCULO (no el objetivo).
+        Retorna el nivel de peligro: 0 (seguro), 1 (precaución), 2 (peligro)
+        """
         # Leer sensores IR
         front_c = self.robobo.readIRSensor(IR.FrontC)
         front_l = self.robobo.readIRSensor(IR.FrontL)
         front_r = self.robobo.readIRSensor(IR.FrontR)
         
-        # Verificar si vemos el objetivo (pero no estamos en él)
-        blob = self.robobo.readColorBlob(BlobColor.RED)
-        veo_objetivo = blob.size > self.BLOB_SIZE_MIN
-        objetivo_centrado = self._is_goal_centered(blob)
+        # IMPORTANTE: Primero verificar si es el objetivo
+        if self._is_approaching_goal():
+            print("✅ Acercándose al objetivo - Sin penalización")
+            return 0  # No hay peligro, es el objetivo
         
-        # Si vemos el objetivo grande y centrado, asumimos que ES el obstáculo detectado
-        # y NO evadimos (queremos acercarnos)
-        if veo_objetivo and objetivo_centrado and blob.size > 5:
-            print("🎯 Objetivo visible y centrado - Acercándose")
-            return False
+        # Si NO es el objetivo y hay lecturas altas de IR = OBSTÁCULO
+        max_ir = max(front_c, front_l, front_r)
         
-        # Si hay obstáculo y NO vemos bien el objetivo, evadir
-        has_obstacle = (front_c > self.OBSTACLE_THRESHOLD_FRONT or 
-                       front_l > self.OBSTACLE_THRESHOLD_SIDE or 
-                       front_r > self.OBSTACLE_THRESHOLD_SIDE)
+        if max_ir > self.OBSTACLE_DANGER_ZONE:
+            print(f"⚠️⚠️ PELIGRO: Obstáculo muy cerca (IR: {max_ir})")
+            return 2  # Peligro alto
+        elif max_ir > self.OBSTACLE_THRESHOLD_FRONT:
+            print(f"⚠️ PRECAUCIÓN: Obstáculo detectado (IR: {max_ir})")
+            return 1  # Precaución
         
-        if has_obstacle:
-            print("⚠️ Obstáculo detectado - Evadiendo")
-            self.robobo.moveWheelsByTime(-20, -20, 1)  # Retroceder
-            self.robobo.moveWheelsByTime(30, -30, 1)   # Girar
-            self.robobo.wait(0.5)
-            return True
-        
-        return False
+        return 0  # Seguro
+    
     
     def step(self, action):
         """
@@ -141,77 +159,95 @@ class RoboboEnv(gym.Env):
         """
         self.steps += 1
         
-        # Verificar y evitar obstáculos antes de la acción
-        evaded = self._avoid_obstacle()
-        
-        # Ejecutar acción solo si no se evadió obstáculo
-        if not evaded:
-            
-            if action == 0:  # Avanzar
-                self.robobo.moveWheelsByTime(5, 5, 2)  
-            elif action == 1:  # Girar izquierda leve
-                self.robobo.moveWheelsByTime(0, 2, 2)
-            elif action == 2:  # Girar derecha leve
-                self.robobo.moveWheelsByTime(2, 0, 2)
-            elif action == 3:  # Girar izquierda fuerte
-                self.robobo.moveWheelsByTime(0, 4, 2)
-            elif action == 4:  # Girar derecha fuerte
-                self.robobo.moveWheelsByTime(4, 0, 2)
-            elif action == 5:  # Girar izquierda leve
-                self.robobo.moveWheelsByTime(0, 6, 2)
-            elif action == 6:  # Girar derecha leve
-                self.robobo.moveWheelsByTime(6, 0, 2)
-            elif action == 7:  # Girar izquierda fuerte
-                self.robobo.moveWheelsByTime(0, 8, 2)
-            elif action == 8:  # Girar derecha fuerte
-                self.robobo.moveWheelsByTime(8, 0, 2)
-            elif action == 9:  # Girar izquierda leve
-                self.robobo.moveWheelsByTime(0, 10, 2)
-            elif action == 10:  # Girar derecha leve
-                self.robobo.moveWheelsByTime(10, 0, 2)
-            elif action == 11:  # Girar izquierda fuerte
-                self.robobo.moveWheelsByTime(0, 12, 2)
-            elif action == 12:  # Girar derecha fuerte
-                self.robobo.moveWheelsByTime(12, 0, 2)
-            elif action == 13:  # Giro 180°
-                self.robobo.moveWheelsByTime(10, -10, 3.7)
-            
+
+        if action == 0:  # Avanzar
+            self.robobo.moveWheelsByTime(5, 5, 2)  
+        elif action == 1:  # Girar izquierda leve
+            self.robobo.moveWheelsByTime(0, 5, 2)
+        elif action == 2:  # Girar derecha leve
+            self.robobo.moveWheelsByTime(5, 0, 2)
+        elif action == 3:  # Girar izquierda fuerte
+            self.robobo.moveWheelsByTime(0, 5, 4)
+        elif action == 4:  # Girar derecha fuerte
+            self.robobo.moveWheelsByTime(5, 0, 4)
+        elif action == 5:  # Giro 180°
+            self.robobo.moveWheelsByTime(10, -10, 3)
+
+
+        collision_risk = self._check_collision_risk()
+
         # Obtener nuevo estado
         self.state = self._get_state()
+   
+        # Extraer posición y distancia del estado
+        position = self.state // 3
+        distance_category = self.state % 3
+        
+        # Calcular recompensa basada en posición y distancia
+        blob = self.robobo.readColorBlob(BlobColor.RED)
+        
+        # Recompensa base según posición (0 = centrado, mejor)
+        if position == 0:  # Centrado
+            position_reward = 3.0
+        elif position in [1, 7]:  # Centro-izquierda/derecha
+            position_reward = 1.5
+        elif position in [2, 8]:
+            position_reward = 1.0
+        elif position in [3, 9]:
+            position_reward = 0.6
+        elif position in [4, 10]:
+            position_reward = 0.4
+        elif position in [5, 11]:
+            position_reward = 0.2
+        elif position in [6, 12]:
+            position_reward = 0.1
+        else:  # No visible
+            position_reward = -5.0
+        
+        # Multiplicador según distancia (más cerca = mejor)
+        if distance_category == 0:  # Cerca
+            distance_multiplier = 3.0
+        elif distance_category == 1:  # Media
+            distance_multiplier = 1.5
+        else:  # Lejos
+            distance_multiplier = 0.5
 
-    
-
-        reward = 0
-        if self.state == 0: reward = 3*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [1,7]: reward = 1.5*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [2,8]: reward = 1*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [3,9]: reward = 0.6*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [4,10]: reward = 0.4*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [5,11]: reward = 0.2*self.robobo.readColorBlob(BlobColor.RED).size
-        elif self.state in [6,12]: reward = 0.1*self.robobo.readColorBlob(BlobColor.RED).size
-        else: reward = -5
-
+                
+        # Recompensa final combinada
+        if position == 13:  # No visible
+            reward = position_reward
+        else:
+            reward = position_reward * distance_multiplier
+        
+        # PENALIZACIÓN POR COLISIÓN (solo si NO es el objetivo)
+        if collision_risk == 2:  # Peligro alto
+            reward -= 15.0
+            print("💥 PENALIZACIÓN ALTA: Demasiado cerca de obstáculo")
+        elif collision_risk == 1:  # Precaución
+            reward -= 5.0
+            print("⚠️ PENALIZACIÓN MEDIA: Obstáculo cerca")
+        
         # Verificar si alcanzó el objetivo
         terminated = self._is_at_goal()
         
         if terminated:
-            print(" ¡OBJETIVO ALCANZADO! 🎉")
+            print("✅ ¡OBJETIVO ALCANZADO! 🎉")
             reward += 200  # Gran recompensa por completar el objetivo
         
         # Verificar condiciones de terminación por tiempo
         truncated = self.steps >= self.max_steps
         
         # Obtener información para logging
-        blob = self.robobo.readColorBlob(BlobColor.RED)
-        distancia = self.robobo.readIRSensor(IR.FrontC)
+        distancia_ir = self.robobo.readIRSensor(IR.FrontC)
         
         # Logging
         print(f"\n--- Step {self.steps} ---")
         print(f"Acción: {action}")
-        print(f"Estado: {self.state}")
-        print(f"Distancia IR: {distancia}")
+        print(f"Estado: {self.state} (Pos: {position}, Dist: {distance_category})")
+        print(f"Distancia IR: {distancia_ir}")
         print(f"Tamaño Blob: {blob.size}")
         print(f"Blob Pos X: {blob.posx}")
+        print(f"Riesgo Colisión: {collision_risk}")
         print(f"Recompensa: {reward:.2f}")
         
         if truncated:
@@ -221,8 +257,9 @@ class RoboboEnv(gym.Env):
 
 
 
+    """
     def _get_state(self):
-        """
+      
         Determina el estado actual basado en la posición del objetivo rojo.
         
         Estados:
@@ -232,7 +269,7 @@ class RoboboEnv(gym.Env):
         3: Objetivo extremo izquierda (1-25)
         4: Objetivo extremo derecha (75+)
         5: Objetivo no visible
-        """
+    
         # Buscar objetivo moviendo la cámara pan
         for i, ang in enumerate(self.pan_positions):
             self.robobo.movePanTo(ang, 100, True)
@@ -246,26 +283,83 @@ class RoboboEnv(gym.Env):
         
         # Si no se encuentra en ninguna posición
         return len(self.pan_positions)
+        """
+    def _get_state(self):
+        """
+        Determina el estado actual basado en la posición del objetivo rojo y su distancia.
+        
+        Estados combinados: posición (14) × distancia (3) = 42 estados totales
+        
+        Posiciones (13 ángulos + no visible):
+        0-12: Posiciones de pan desde 0° hasta -90°
+        13: Objetivo no visible
+        
+        Distancias:
+        0: Cerca (blob.size >= 10)
+        1: Media (5 <= blob.size < 10)
+        2: Lejos (blob.size < 5)
+        
+        Fórmula del estado: posición * 3 + categoría_distancia
+        """
+        # Buscar objetivo moviendo la cámara pan
+        for i, ang in enumerate(self.pan_positions):
+            self.robobo.movePanTo(ang, 100, True)
+            blob = self.robobo.readColorBlob(BlobColor.RED)
+            
+            if blob.size > 0:
+                print(f"🔴 Blob detectado - size: {blob.size}, posición: {i}, ángulo: {ang}°")
+                
+                # Categorizar distancia según tamaño del blob
+                if blob.size >= self.DISTANCE_CLOSE:
+                    distance_category = 0  # Cerca
+                    distance_label = "Cerca"
+                elif blob.size >= self.DISTANCE_MEDIUM:
+                    distance_category = 1  # Media
+                    distance_label = "Media"
+                else:
+                    distance_category = 2  # Lejos
+                    distance_label = "Lejos"
+                
+                print(f"📏 Distancia: {distance_label} (categoría {distance_category})")
+                
+                # Calcular estado combinado
+                state = i * 3 + distance_category
+                return state
+        
+        # Si no se encuentra en ninguna posición: estados 39, 40, 41
+        # Usamos estado 39 (posición 13 × 3 + 0) para "no visible"
+        print("❌ Objetivo no visible")
+        return len(self.pan_positions) * 3
 
     def render(self):
         """Muestra información del estado actual."""
-        state_names = {
-            0: "Centrado",
-            1: "Centro-Izquierda", 
-            2: "Centro-Derecha",
-            3: "Izquierda",
-            4: "Derecha",
-            5: "Extremo Izquierda",
-            6: "Extremo Derecha",
-            7: "No Visible"
+        if self.state is None:
+            print("Estado no inicializado")
+            return
+        
+        position = self.state // 3
+        distance_category = self.state % 3
+        
+        # Nombres de estados
+        position_names = {
+            0: "0°", 1: "15°", 2: "30°", 3: "45°", 
+            4: "60°", 5: "75°", 6: "90°",
+            7: "-15°", 8: "-30°", 9: "-45°",
+            10: "-60°", 11: "-75°", 12: "-90°",
+            13: "No Visible"
         }
-        print(f"Estado actual: {state_names.get(self.state, 'Desconocido')} ({self.state})")
+        
+        distance_names = {0: "Cerca", 1: "Media", 2: "Lejos"}
+        
+        print(f"Estado: {self.state} | "
+              f"Posición: {position_names.get(position, 'Desconocido')} | "
+              f"Distancia: {distance_names.get(distance_category, 'Desconocido')}")
 
     def close(self):
         """Cierra las conexiones con el robot."""
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print(" Conexiones cerradas correctamente")
+            print("✅ Conexiones cerradas correctamente")
         except Exception as e:
-            print(f"Error al cerrar conexiones: {e}")
+            print(f"❌ Error al cerrar conexiones: {e}")

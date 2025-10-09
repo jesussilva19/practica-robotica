@@ -87,7 +87,7 @@ def test_model(model_path, n_episodes=5, render=True):
 def main():
     """Función principal."""
     # Puedes cambiar esta ruta al modelo que quieras probar
-    model_path = "/Users/miguel_lopez/uni-local/CUARTO/RIA/practica-ria/robobo_logs/20251008_102356/models/ppo_robobo_interrupted.zip"
+    model_path = "./robobo_logs/20251009_163722/models/ppo_robobo_interrupted"
     # Si se proporciona ruta como argumento
     if len(sys.argv) > 1:
         model_path = sys.argv[1]
