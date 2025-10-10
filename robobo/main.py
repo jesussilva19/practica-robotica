@@ -26,7 +26,7 @@ class RoboboEnv(gym.Env):
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
         # Espacios de observación y acción
-        self.observation_space = spaces.Discrete(14)  # 6 estados según posición del objetivo
+        self.observation_space = spaces.Discrete(14)  # 14 estados según posición del objetivo
         self.action_space = spaces.Discrete(6)       # 6 acciones de movimiento
 
         # Variables de estado
@@ -45,7 +45,7 @@ class RoboboEnv(gym.Env):
         # Posiciones del pan para búsqueda
         self.pan_positions = [0, 15, 30, 45, 60, 75, 90, -15, -30, -45, -60, -75,-90]
 
-    def reset(self, *, seed=None, options=None):
+    def reset(self, *, seed=None):
         """Reinicia el entorno y retorna el estado inicial."""
         super().reset(seed=seed)
         self.steps = 0
@@ -61,12 +61,6 @@ class RoboboEnv(gym.Env):
         self.state = self._get_state()
         return self.state, {}
 
-    def _is_goal_centered(self, blob):
-        """Verifica si el objetivo está centrado en la visión.
-        if blob.size == 0:
-            return False
-        return self.CENTER_MIN <= blob.posx <= self.CENTER_MAX"""
-        return True
 
     def _is_at_goal(self):
         """
@@ -75,14 +69,11 @@ class RoboboEnv(gym.Env):
         """
         blob = self.robobo.readColorBlob(BlobColor.RED)
         distancia = self.robobo.readIRSensor(IR.FrontC)
-        objetivo_centrado = self._is_goal_centered(blob)
         
         # Condiciones para considerar que llegó al objetivo:
         # 1. El blob es lo suficientemente grande
-        # 2. Está centrado en la visión
-        # 3. La distancia es muy cercana
-        at_goal = (blob.size > self.BLOB_SIZE_GOAL and 
-                   objetivo_centrado and 
+        # 2. La distancia es muy cercana
+        at_goal = (blob.size > self.BLOB_SIZE_GOAL and  
                    distancia > self.OBSTACLE_THRESHOLD_FRONT)
         
         return at_goal
@@ -94,7 +85,7 @@ class RoboboEnv(gym.Env):
         """
         # PRIMERO: Verificar si estamos en el objetivo
         if self._is_at_goal():
-            print("🎯 En el objetivo - NO evadir")
+            print("En el objetivo - NO evadir")
             return False
         
         # Leer sensores IR
@@ -105,12 +96,11 @@ class RoboboEnv(gym.Env):
         # Verificar si vemos el objetivo (pero no estamos en él)
         blob = self.robobo.readColorBlob(BlobColor.RED)
         veo_objetivo = blob.size > self.BLOB_SIZE_MIN
-        objetivo_centrado = self._is_goal_centered(blob)
         
-        # Si vemos el objetivo grande y centrado, asumimos que ES el obstáculo detectado
+        # Si vemos el objetivo grande, asumimos que es el obstáculo detectado
         # y NO evadimos (queremos acercarnos)
-        if veo_objetivo and objetivo_centrado and blob.size > 5:
-            print("🎯 Objetivo visible y centrado - Acercándose")
+        if veo_objetivo and blob.size > 5:
+            print("Objetivo visible y centrado - Acercándose")
             return False
         
         # Si hay obstáculo y NO vemos bien el objetivo, evadir
@@ -119,7 +109,7 @@ class RoboboEnv(gym.Env):
                        front_r > self.OBSTACLE_THRESHOLD_SIDE)
         
         if has_obstacle:
-            print("⚠️ Obstáculo detectado - Evadiendo")
+            print("Obstáculo detectado - Evadiendo")
             self.robobo.moveWheelsByTime(-20, -20, 1)  # Retroceder
             self.robobo.moveWheelsByTime(30, -30, 1)   # Girar
             self.robobo.wait(0.5)
@@ -176,7 +166,7 @@ class RoboboEnv(gym.Env):
         terminated = self._is_at_goal()
         
         if terminated:
-            print(" ¡OBJETIVO ALCANZADO! 🎉")
+            print(" ¡OBJETIVO ALCANZADO! ")
             reward += 200  # Gran recompensa por completar el objetivo
         
         # Verificar condiciones de terminación por tiempo
@@ -196,7 +186,7 @@ class RoboboEnv(gym.Env):
         print(f"Recompensa: {reward:.2f}")
         
         if truncated:
-            print("⏱️ Tiempo máximo alcanzado - Episodio truncado")
+            print("** Tiempo máximo alcanzado - Episodio truncado")
 
         return self.state, reward, terminated, truncated, {}
 

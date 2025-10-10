@@ -28,7 +28,7 @@ model = PPO(
     policy="MlpPolicy",
     env=env,
     learning_rate=3e-4,
-    n_steps=128, # Aumentado para mejor exploración
+    n_steps=128, 
     batch_size=64,
     n_epochs=10,
     gamma=0.90, # Factor de descuento
@@ -62,7 +62,7 @@ eval_callback = EvalCallback(
 )
 
 # Entrenar el modelo
-TOTAL_TIMESTEPS = 2000 # Aumentado significativamente
+TOTAL_TIMESTEPS = 2000 
 
 print("\nIniciando entrenamiento...")
 print(f"Total de timesteps: {TOTAL_TIMESTEPS}")
@@ -93,7 +93,7 @@ try:
 except KeyboardInterrupt:
     print("\nEntrenamiento interrumpido por el usuario")
     model.save(f"{models_dir}ppo_robobo_interrupted")
-    print(f"💾 Modelo guardado en {models_dir}ppo_robobo_interrupted")
+    print(f"Modelo guardado en {models_dir}ppo_robobo_interrupted")
 
 except Exception as e:
     print(f"\nError durante el entrenamiento: {e}")

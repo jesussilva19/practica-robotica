@@ -6,7 +6,7 @@ from stable_baselines3 import PPO
 from main4 import RoboboEnv
 import sys
 
-def test_model(model_path, n_episodes=5, render=True):
+def test_model(model_path, n_episodes=3, render=True):
     """
     Prueba un modelo entrenado en el entorno Robobo.
     
@@ -24,7 +24,7 @@ def test_model(model_path, n_episodes=5, render=True):
         # Crear entorno
         env = RoboboEnv()
         
-        print(f"\n🎮 Ejecutando {n_episodes} episodios de prueba...\n")
+        print(f"\nEjecutando {n_episodes} episodios de prueba...\n")
         
         total_rewards = []
         success_count = 0
@@ -79,14 +79,14 @@ def test_model(model_path, n_episodes=5, render=True):
         env.close()
         
     except FileNotFoundError:
-        print(f"❌ Error: No se encontró el modelo en {model_path}")
+        print(f"Error: No se encontró el modelo en {model_path}")
         print("Verifica que la ruta sea correcta y que el archivo exista")
     except Exception as e:
-        print(f"❌ Error al cargar o ejecutar el modelo: {e}")
+        print(f"Error al cargar o ejecutar el modelo: {e}")
 
 def main():
     """Función principal."""
-    # Puedes cambiar esta ruta al modelo que quieras probar
+    # Cambiar esta ruta al modelo que se quiera probar
     model_path = "C:\\Users\\jesus\\Desktop\\practica-robotica\\robobo_logs\\finalultimo4\\ppo_robobo_final.zip"
     
     # Si se proporciona ruta como argumento
