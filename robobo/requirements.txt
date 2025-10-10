@@ -1,0 +1,7 @@
+gymnasium==1.1.1
+matplotlib==3.7.1
+numpy==2.3.3
+pandas==2.3.3
+robobopy==1.4.3
+robobosim==1.5.1
+stable_baselines3==2.7.0
