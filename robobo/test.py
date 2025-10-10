@@ -3,7 +3,7 @@ Script para probar el modelo PPO entrenado con el robot Robobo.
 """
 import gymnasium as gym
 from stable_baselines3 import PPO
-from main4 import RoboboEnv
+from main import RoboboEnv
 import sys
 
 def test_model(model_path, n_episodes=3, render=True):
