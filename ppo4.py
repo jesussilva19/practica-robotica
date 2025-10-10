@@ -62,7 +62,7 @@ eval_callback = EvalCallback(
 )
 
 # Entrenar el modelo
-TOTAL_TIMESTEPS = 3000 # Aumentado significativamente
+TOTAL_TIMESTEPS = 2000 # Aumentado significativamente
 
 print("\nIniciando entrenamiento...")
 print(f"Total de timesteps: {TOTAL_TIMESTEPS}")
