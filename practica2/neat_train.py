@@ -194,7 +194,7 @@ if __name__ == '__main__':
     
     try:
         # Ejecutar NEAT
-        winner, config, stats = run_neat(config_path, generations=30)
+        winner, config, stats = run_neat(config_path, generations=10)
         
         print(f"\n{'='*60}")
         print(f"✅ ENTRENAMIENTO COMPLETADO")
