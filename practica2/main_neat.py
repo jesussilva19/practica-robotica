@@ -24,14 +24,14 @@ class RoboboNEATEnv(gym.Env):
         self.sim.connect()
         
         # Configuración inicial de la cámara
-        self.robobo.moveTiltTo(200, 50)
+        self.robobo.moveTiltTo(200, 70)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
         # NEAT necesita entradas continuas (no estados discretos)
         # Entradas: [blob_x, blob_size, ir_front_c, ir_front_l, ir_front_r]
         self.observation_space = spaces.Box(
             low=np.array([0.0, 0.0, 0.0, 0.0, 0.0]),
-            high=np.array([100.0, 100.0, 1000.0, 1000.0, 1000.0]),
+            high=np.array([100.0, 500.0, 1000.0, 1000.0, 1000.0]),
             dtype=np.float32
         )
         
@@ -47,8 +47,8 @@ class RoboboNEATEnv(gym.Env):
         self.OBSTACLE_THRESHOLD_FRONT = 30
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
-        self.BLOB_SIZE_GOAL = 15  # Tamaño para considerar objetivo alcanzado
-        self.GOAL_DISTANCE_THRESHOLD = 50  # Distancia IR para objetivo
+        self.BLOB_SIZE_GOAL = 300  # Tamaño para considerar objetivo alcanzado
+        self.GOAL_DISTANCE_THRESHOLD = 35  # Distancia IR para objetivo
 
     def reset(self, *, seed=None):
         """Reinicia el entorno y retorna el estado inicial."""
@@ -83,7 +83,7 @@ class RoboboNEATEnv(gym.Env):
         blob_x = blob.posx if blob.size > 0 else 50.0  # Centro si no hay blob
         
         # Tamaño del blob
-        blob_size = min(blob.size, 100.0)  # Limitar a 100
+        blob_size = min(blob.size, 500.0)  # Limitar a 500
         
         state = np.array([
             blob_x,
@@ -92,6 +92,7 @@ class RoboboNEATEnv(gym.Env):
             ir_front_l,
             ir_front_r
         ], dtype=np.float32)
+        print(f"Estado: {state}")
         
         return state
 
@@ -121,7 +122,6 @@ class RoboboNEATEnv(gym.Env):
         5: Giro 180°
         """
         self.steps += 1
-        
         # Ejecutar acción
         if action == 0:  # Avanzar
             self.robobo.moveWheelsByTime(10, 10, 1)  
@@ -173,7 +173,7 @@ class RoboboNEATEnv(gym.Env):
             reward += 1.0
             
             # Recompensa por tamaño del blob (más grande = más cerca)
-            size_reward = min(blob.size / 20.0, 5.0)  # Máximo 5 puntos
+            size_reward = min(blob.size / 50.0, 5.0)  # Máximo 5 puntos
             reward += size_reward
             
             # Recompensa por centrar el blob
@@ -190,7 +190,7 @@ class RoboboNEATEnv(gym.Env):
             
         else:
             # Penalización fuerte si no ve el objetivo
-            reward -= 2.0
+            reward -= 3.0
         
         # Penalización por estar muy cerca de obstáculos (excepto el objetivo)
         if ir_front < self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
