@@ -170,10 +170,10 @@ def plot_stats(stats, winner, config):
     print(f"📈 Gráfica de aprendizaje guardada")
     plt.close()
     
-    # 2. Visualizar la red neuronal del mejor individuo
-    from neat.graphs import draw_net
-    draw_net(config, winner, True, filename=f'{graphs_dir}red_neuronal.png')
-    print(f"🧠 Gráfica de red neuronal guardada")
+    ## 2. Visualizar la red neuronal del mejor individuo
+    #from neat.graphs import draw_net
+    #draw_net(config, winner, True, filename=f'{graphs_dir}red_neuronal.png')
+    #print(f"🧠 Gráfica de red neuronal guardada")
     
     # 3. Gráfica de especies
     try:
@@ -186,7 +186,7 @@ def plot_stats(stats, winner, config):
 
 if __name__ == '__main__':
     # Archivo de configuración
-    config_path = 'config-feedforward.txt'
+    config_path = 'practica2/config-feedforward.txt'
     
     if not os.path.exists(config_path):
         print(f"❌ Error: No se encuentra el archivo {config_path}")

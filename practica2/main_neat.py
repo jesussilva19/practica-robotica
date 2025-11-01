@@ -103,9 +103,8 @@ class RoboboNEATEnv(gym.Env):
         distancia = self.robobo.readIRSensor(IR.FrontC)
         
         # Objetivo alcanzado si el blob es grande y está cerca
-        at_goal = (blob.size > self.BLOB_SIZE_GOAL and 
-                   distancia > self.OBSTACLE_THRESHOLD_FRONT and
-                   distancia < self.GOAL_DISTANCE_THRESHOLD)
+        at_goal = (blob.size > self.BLOB_SIZE_GOAL and distancia < self.GOAL_DISTANCE_THRESHOLD)
+
         
         return at_goal
 
