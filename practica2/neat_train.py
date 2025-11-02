@@ -16,14 +16,9 @@ os.makedirs(log_dir, exist_ok=True)
 os.makedirs(models_dir, exist_ok=True)
 os.makedirs(graphs_dir, exist_ok=True)
 
-print(f"📁 Directorio de logs: {log_dir}")
+print(f"Directorio de logs: {log_dir}")
 
-# Variables globales para estadísticas
-generation_stats = {
-    'max_fitness': [],
-    'avg_fitness': [],
-    'min_fitness': []
-}
+# Variables globales para seguimiento
 best_genome_ever = None
 best_fitness_ever = -float('inf')
 
@@ -35,7 +30,7 @@ def eval_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
     
     # Crear entorno
-    env = RoboboNEATEnv(max_steps=150)
+    env = RoboboNEATEnv(max_steps=50)
     
     obs, _ = env.reset()
     total_reward = 0.0
@@ -58,7 +53,7 @@ def eval_genome(genome, config):
             steps += 1
             
     except Exception as e:
-        print(f"❌ Error evaluando genoma: {e}")
+        print(f"Error evaluando genoma: {e}")
         total_reward = -100  # Penalización por error
     
     finally:
@@ -85,7 +80,7 @@ def eval_genomes(genomes, config):
             print(f"🏆 ¡Nuevo mejor fitness: {fitness:.2f}!")
 
 
-def run_neat(config_file, generations=50):
+def run_neat(config_file, generations=30):
     """
     Ejecuta el algoritmo NEAT.
     """
@@ -106,23 +101,6 @@ def run_neat(config_file, generations=50):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(5, filename_prefix=f'{models_dir}neat-checkpoint-'))
-    
-    # Callback para guardar estadísticas
-    def post_evaluate(config, population, species_set, generation):
-        # Recopilar fitness de la generación
-        fitnesses = [g.fitness for g in population.values() if g.fitness is not None]
-        
-        if fitnesses:
-            generation_stats['max_fitness'].append(max(fitnesses))
-            generation_stats['avg_fitness'].append(np.mean(fitnesses))
-            generation_stats['min_fitness'].append(min(fitnesses))
-            
-            print(f"\n📊 Generación {generation}")
-            print(f"   Max Fitness: {max(fitnesses):.2f}")
-            print(f"   Avg Fitness: {np.mean(fitnesses):.2f}")
-            print(f"   Min Fitness: {min(fitnesses):.2f}")
-    
-    # Añadir el callback (esto requiere modificar el código de NEAT o hacerlo manualmente)
     
     # Ejecutar evolución
     print("\n🚀 Iniciando evolución con NEAT...")
@@ -186,7 +164,8 @@ def plot_stats(stats, winner, config):
 
 if __name__ == '__main__':
     # Archivo de configuración
-    config_path = 'practica2/config-feedforward.txt'
+    config_path = './config-feedforward'
+
     
     if not os.path.exists(config_path):
         print(f"❌ Error: No se encuentra el archivo {config_path}")
