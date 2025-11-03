@@ -164,7 +164,7 @@ def plot_stats(stats, winner, config):
 
 if __name__ == '__main__':
     # Archivo de configuración
-    config_path = './config-feedforward'
+    config_path = './config-feedforward.txt'
 
     
     if not os.path.exists(config_path):
