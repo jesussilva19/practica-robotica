@@ -57,14 +57,7 @@ class RoboboNEATAvoidEnv(gym.Env):
         self.cylinder_name = "cylinder"
         self.block_name = "block"
 
-    # --- utilidades específicas sim (AJUSTA si tu API difiere) ---
-    def _place_initial_pose(self):
-        """Posición inicial fija exigida por el enunciado."""
-        try:
-            # Usa el método correcto de tu RoboboSim para fijar pose del robot
-            self.sim.setRobotPosition(-1000.0, 39.0, -400.0)
-        except Exception:
-            pass
+
 
     def _read_robot_xy(self):
         try:
@@ -84,7 +77,8 @@ class RoboboNEATAvoidEnv(gym.Env):
         """Posición inicial exigida por el enunciado."""
         try:
             
-            self.sim.setRobotPosition(-1000.0, 39.0, -400.0)  
+            
+            self.sim.setRobotLocation(0, {'x': -1000.0, 'y': 39.0, 'z': -400.0})
             
             
         except Exception as e:

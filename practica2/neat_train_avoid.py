@@ -93,7 +93,7 @@ def run(config_file, generations=30):
 
 if __name__ == "__main__":
     # Usa el MISMO config-feedforward.txt (5 in, 6 out, sin threshold corto)
-    config_path = "practica2/config-feedforward"  # asegúrate de la extensión .txt
+    config_path = "practica2/2.1/config-feedforward"  # asegúrate de la extensión .txt
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encontró config: {config_path}")
     run(config_path, generations=10)
