@@ -30,7 +30,7 @@ def eval_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
     
     # Crear entorno
-    env = RoboboNEATEnv(max_steps=50)
+    env = RoboboNEATEnv(max_steps=100)
     
     obs, _ = env.reset()
     total_reward = 0.0
@@ -173,7 +173,7 @@ if __name__ == '__main__':
     
     try:
         # Ejecutar NEAT
-        winner, config, stats = run_neat(config_path, generations=10)
+        winner, config, stats = run_neat(config_path, generations=30)
         
         print(f"\n{'='*60}")
         print(f"✅ ENTRENAMIENTO COMPLETADO")

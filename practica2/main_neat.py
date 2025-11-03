@@ -48,7 +48,7 @@ class RoboboNEATEnv(gym.Env):
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
         self.BLOB_SIZE_GOAL = 300  # Tamaño para considerar objetivo alcanzado
-        self.GOAL_DISTANCE_THRESHOLD = 35  # Distancia IR para objetivo
+        self.GOAL_DISTANCE_THRESHOLD = 30  # Distancia IR para objetivo
 
     def reset(self, *, seed=None):
         """Reinicia el entorno y retorna el estado inicial."""
