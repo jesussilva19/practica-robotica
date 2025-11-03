@@ -44,7 +44,7 @@ class RoboboNEATEnv(gym.Env):
         self.max_steps = max_steps
         
         # Constantes para detección
-        self.OBSTACLE_THRESHOLD_FRONT = 30
+        self.OBSTACLE_THRESHOLD_FRONT = 40
         self.OBSTACLE_THRESHOLD_SIDE = 300
         self.BLOB_SIZE_MIN = 2
         self.BLOB_SIZE_GOAL = 300  # Tamaño para considerar objetivo alcanzado
@@ -56,12 +56,13 @@ class RoboboNEATEnv(gym.Env):
         self.steps = 0
         
         # Reiniciar simulación
-        self.sim.resetSimulation()  
+        self.sim.resetSimulation() 
+
         self.robobo.wait(1.0)
-        
         # Reconfigurar cámara
         self.robobo.moveTiltTo(200, 50)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
+
         
         self.state = self._get_state()
         return self.state, {}
@@ -146,14 +147,14 @@ class RoboboNEATEnv(gym.Env):
         terminated = self._is_at_goal()
         
         if terminated:
-            print("🎯 ¡OBJETIVO ALCANZADO! 🎯")
+            print("¡OBJETIVO ALCANZADO!")
             reward += 500  # Gran recompensa por completar el objetivo
         
         # Verificar condiciones de terminación por tiempo
         truncated = self.steps >= self.max_steps
         
         if truncated:
-            print(f"⏱️ Tiempo máximo alcanzado ({self.max_steps} steps)")
+            print(f"Tiempo máximo alcanzado ({self.max_steps} steps)")
             reward -= 50  # Penalización por no completar
 
         return self.state, reward, terminated, truncated, {}
@@ -216,6 +217,6 @@ class RoboboNEATEnv(gym.Env):
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print("✅ Conexiones cerradas correctamente")
+            print("Conexiones cerradas correctamente")
         except Exception as e:
-            print(f"❌ Error al cerrar conexiones: {e}")
+            print(f"Error al cerrar conexiones: {e}")
