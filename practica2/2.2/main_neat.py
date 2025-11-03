@@ -149,14 +149,14 @@ class RoboboNEATEnv(gym.Env):
         terminated = self._is_at_goal()
         
         if terminated:
-            print("🎯 ¡OBJETIVO ALCANZADO! 🎯")
+            print("¡OBJETIVO ALCANZADO!")
             reward += 500  # Gran recompensa por completar el objetivo
         
         # Verificar condiciones de terminación por tiempo
         truncated = self.steps >= self.max_steps
         
         if truncated:
-            print(f"⏱️ Tiempo máximo alcanzado ({self.max_steps} steps)")
+            print(f"Tiempo máximo alcanzado ({self.max_steps} steps)")
             reward -= 50  # Penalización por no completar
 
         return self.state, reward, terminated, truncated, {}
@@ -219,6 +219,6 @@ class RoboboNEATEnv(gym.Env):
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print("✅ Conexiones cerradas correctamente")
+            print("Conexiones cerradas correctamente")
         except Exception as e:
-            print(f"❌ Error al cerrar conexiones: {e}")
+            print(f"Error al cerrar conexiones: {e}")
