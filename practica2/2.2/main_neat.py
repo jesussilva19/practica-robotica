@@ -32,7 +32,7 @@ class RoboboNEATEnv(gym.Env):
         # Entradas: [blob_x, blob_size, ir_front_c, ir_front_l, ir_front_r]
         self.observation_space = spaces.Box(
             low=np.array([0.0, 0.0, 0.0, 0.0, 0.0]),
-            high=np.array([100.0, 500.0, 1000.0, 1000.0, 1000.0]),
+            high=np.array([1.0, 1.0, 1.0, 1.0, 1.0]),
             dtype=np.float32
         )
         
@@ -44,12 +44,14 @@ class RoboboNEATEnv(gym.Env):
         self.steps = 0
         self.max_steps = max_steps
         
-        # Constantes para detección
-        self.OBSTACLE_THRESHOLD_FRONT = 40
-        self.OBSTACLE_THRESHOLD_SIDE = 300
-        self.BLOB_SIZE_MIN = 2
-        self.BLOB_SIZE_GOAL = 300  # Tamaño para considerar objetivo alcanzado
-        self.GOAL_DISTANCE_THRESHOLD = 40  # Distancia IR para objetivo
+        # Constantes para detección (valores SIN normalizar - usados en comparaciones internas)
+        # Nota: El estado de la red neuronal SÍ está normalizado, pero estos thresholds
+        # se comparan directamente con los valores del simulador
+        self.OBSTACLE_THRESHOLD_FRONT = 40    # IR < 40 indica obstáculo cercano
+        self.OBSTACLE_THRESHOLD_SIDE = 300    # IR lateral
+        self.BLOB_SIZE_MIN = 2                # Tamaño mínimo para considerar que ve el blob
+        self.BLOB_SIZE_GOAL = 300             # Tamaño para considerar objetivo alcanzado
+        self.GOAL_DISTANCE_THRESHOLD = 40     # Distancia IR para confirmar llegada
 
     def reset(self, *, seed=None):
         """Reinicia el entorno y retorna el estado inicial."""
@@ -88,14 +90,15 @@ class RoboboNEATEnv(gym.Env):
         # Tamaño del blob
         blob_size = min(blob.size, 500.0)  # Limitar a 500
         
+
+        # Normalizar todo a [0, 1]
         state = np.array([
-            blob_x,
-            blob_size, 
-            ir_front_c,
-            ir_front_l,
-            ir_front_r
+            blob_x / 100.0,           # 0-100 -> 0-1
+            blob_size / 500.0,         # 0-500 -> 0-1
+            ir_front_c / 1000.0,       # 0-1000 -> 0-1
+            ir_front_l / 1000.0,
+            ir_front_r / 1000.0
         ], dtype=np.float32)
-        print(f"Estado: {state}")
         
         return state
 
@@ -127,17 +130,17 @@ class RoboboNEATEnv(gym.Env):
         self.steps += 1
         # Ejecutar acción
         if action == 0:  # Avanzar
-            self.robobo.moveWheelsByTime(10, 10, 1)  
+            self.robobo.moveWheelsByTime(20, 20, 1)  
         elif action == 1:  # Girar izquierda leve
-            self.robobo.moveWheelsByTime(5, 10, 1)
+            self.robobo.moveWheelsByTime(10, 20, 1)
         elif action == 2:  # Girar derecha leve
-            self.robobo.moveWheelsByTime(10, 5, 1)
+            self.robobo.moveWheelsByTime(20, 10, 1)
         elif action == 3:  # Girar izquierda fuerte
-            self.robobo.moveWheelsByTime(0, 10, 1)
+            self.robobo.moveWheelsByTime(0, 20, 1)
         elif action == 4:  # Girar derecha fuerte
-            self.robobo.moveWheelsByTime(10, 0, 1)
+            self.robobo.moveWheelsByTime(20, 0, 1)
         elif action == 5:  # Giro 180°
-            self.robobo.moveWheelsByTime(10, -10, 2)
+            self.robobo.moveWheelsByTime(20, -20, 1)
 
         # Obtener nuevo estado
         self.state = self._get_state()
@@ -199,8 +202,8 @@ class RoboboNEATEnv(gym.Env):
         if ir_front < self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
             reward -= 5.0
         
-        # Pequeña penalización por cada paso (fomenta rapidez)
-        reward -= 0.1
+        # Penalización muy pequeña por cada paso (menos énfasis en rapidez)
+        reward -= 0.05
         
         return reward
 
@@ -219,6 +222,5 @@ class RoboboNEATEnv(gym.Env):
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print("Conexiones cerradas correctamente")
         except Exception as e:
             print(f"Error al cerrar conexiones: {e}")

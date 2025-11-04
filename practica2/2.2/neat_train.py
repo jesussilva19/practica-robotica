@@ -28,9 +28,9 @@ def eval_genome(genome, config):
     """
     # Crear red neuronal desde el genoma
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    
-    # Crear entorno
-    env = RoboboNEATEnv(max_steps=75)
+
+    # Crear entorno con menos pasos para entrenamiento más rápido
+    env = RoboboNEATEnv(max_steps=30)
     
     obs, _ = env.reset()
     total_reward = 0.0
@@ -69,6 +69,7 @@ def eval_genomes(genomes, config):
     """
     global best_genome_ever, best_fitness_ever
     
+    # Evaluar cada genoma
     for genome_id, genome in genomes:
         fitness = eval_genome(genome, config)
         genome.fitness = fitness
@@ -173,7 +174,7 @@ if __name__ == '__main__':
     
     try:
         # Ejecutar NEAT
-        winner, config, stats = run_neat(config_path, generations=30)
+        winner, config, stats = run_neat(config_path, generations=50)
         
         print(f"\n{'='*60}")
         print(f"ENTRENAMIENTO COMPLETADO")
