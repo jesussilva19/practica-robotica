@@ -171,9 +171,20 @@ class RoboboNEATEnv(gym.Env):
         """
         blob = self.robobo.readColorBlob(BlobColor.RED)
         ir_front = self.robobo.readIRSensor(IR.FrontC)
+        blob_loc = self.sim.getObjectLocation('CYLINDERBALL')
+        robobo_loc = self.sim.getRobotLocation(0)
+
+        blob_loc = blob_loc['position']
+        robobo_loc = robobo_loc['position']
         
+        # Calcular distancia al objetivo
+        distance = np.sqrt(
+            (blob_loc['x'] - robobo_loc['x'])**2 +
+            (blob_loc['y'] - robobo_loc['y'])**2 +
+            (blob_loc['z'] - robobo_loc['z'])**2
+        )
+
         reward = 0.0
-        
         # Recompensa por ver el blob (detectar el objetivo)
         if blob.size > self.BLOB_SIZE_MIN:
             reward += 1.0
@@ -196,14 +207,21 @@ class RoboboNEATEnv(gym.Env):
             
         else:
             # Penalización fuerte si no ve el objetivo
-            reward -= 3.0
+            reward -= 1.0
         
         # Penalización por estar muy cerca de obstáculos (excepto el objetivo)
-        if ir_front < self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
-            reward -= 5.0
+        if ir_front > self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
+            reward -= 3.0
         
         # Penalización muy pequeña por cada paso (menos énfasis en rapidez)
         reward -= 0.05
+
+        # Recompensa por acercarse al objetivo (menor distancia)
+        if distance > 0:
+            reward += 500.0 / distance  # Más cerca = mayor recompensa
+
+
+
         
         return reward
 
