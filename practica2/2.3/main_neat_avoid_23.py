@@ -8,12 +8,7 @@ from robobopy.utils.BlobColor import BlobColor
 from robobosim.RoboboSim import RoboboSim
 
 class RoboboNEATAvoidEnv23(gym.Env):
-    """
-    Práctica 2.3 – Avoid the block (SIN recolocar posición inicial)
-    - Se mantiene el escenario con bloque
-    - El Robobo arranca con la posición por defecto del simulador
-    - Observaciones/acciones/fitness en la misma escala que 2.1/2.2
-    """
+
     metadata = {"render_modes": ["human"]}
 
     def __init__(self, max_steps=200, host="localhost"):
@@ -28,22 +23,21 @@ class RoboboNEATAvoidEnv23(gym.Env):
         self.robobo.moveTiltTo(200, 70)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
 
-        # Observación continua NEAT (misma escala que 2.1)
-        # [blob_x (0..100), blob_size (0..500), IR C/L/R (0..1000)]
+     
         self.observation_space = spaces.Box(
             low=np.array([0.0, 0.0, 0.0, 0.0, 0.0], dtype=np.float32),
             high=np.array([100.0, 500.0, 1000.0, 1000.0, 1000.0], dtype=np.float32),
         )
-        # 6 acciones discretas
-        self.action_space = spaces.Discrete(6)
+        # 8 acciones discretas
+        self.action_space = spaces.Discrete(8)
 
         # Estado/episodio
         self.state = None
         self.steps = 0
         self.max_steps = max_steps
 
-        # Constantes (como 2.1/2.2)
-        self.OBSTACLE_THRESHOLD_FRONT = 40   # usaste 40 en tu 2.2
+  
+        self.OBSTACLE_THRESHOLD_FRONT = 40   #
         self.OBSTACLE_THRESHOLD_SIDE  = 300
         self.BLOB_SIZE_MIN            = 2
         self.BLOB_SIZE_GOAL           = 300
@@ -54,13 +48,13 @@ class RoboboNEATAvoidEnv23(gym.Env):
         self.trajectory = []
         self.cylinder_positions = []
 
-        # (opcionales) nombres de objetos, por si tu sim los expone
+    
         self.cylinder_name = "cylinder"
         self.block_name    = "block"
 
-    # --- utilidades sim (AJUSTA si tu API difiere) ---
+
     def _read_robot_xy(self):
-        """Lee (x, y) o (x, z) según tu sim. Usa lo que visualices en 2D."""
+      
         try:
             x, y = self.sim.getPosition()
             return float(x), float(y)
@@ -81,7 +75,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
         self.trajectory = []
         self.cylinder_positions = []
 
-        # IMPORTANTE 2.3: NO se recoloca el robot. Se deja la pose por defecto.
+    
         self.sim.resetSimulation()
         self.robobo.wait(1.0)
 
@@ -110,13 +104,11 @@ class RoboboNEATAvoidEnv23(gym.Env):
         blob_size = min(blob.size, 500.0)
 
         state = np.array([blob_x, blob_size, ir_c, ir_l, ir_r], dtype=np.float32)
-        # print("Estado:", state)  # descomenta si quieres log
+        # print("Estado:", state) 
         return state
 
     def _is_at_goal(self):
-        """
-        Igual criterio que 2.2 (estricto): blob grande y distancia IR no extremadamente baja.
-        """
+
         blob = self.robobo.readColorBlob(BlobColor.RED)
         distancia = self.robobo.readIRSensor(IR.FrontC)
         return (blob.size > self.BLOB_SIZE_GOAL) and (distancia > self.GOAL_DISTANCE_THRESHOLD)
@@ -124,19 +116,42 @@ class RoboboNEATAvoidEnv23(gym.Env):
     def step(self, action):
         self.steps += 1
 
-        # Acciones (mismas que 2.1/2.2)
+        # Acciones 
         if action == 0:   # Avanzar recto
             self.robobo.moveWheelsByTime(10, 10, 1)
+            self.robobo.movePanTo(0, 100, True)
         elif action == 1: # Girar izquierda (leve)
             self.robobo.moveWheelsByTime(5, 10, 1)
+            self.robobo.movePanTo(0, 100, True)
         elif action == 2: # Girar derecha (leve)
             self.robobo.moveWheelsByTime(10, 5, 1)
+            self.robobo.movePanTo(0, 100, True)
         elif action == 3: # Girar izquierda (fuerte)
             self.robobo.moveWheelsByTime(0, 10, 1)
+            self.robobo.movePanTo(0, 100, True)
         elif action == 4: # Girar derecha (fuerte)
             self.robobo.moveWheelsByTime(10, 0, 1)
+            self.robobo.movePanTo(0, 100, True)
         elif action == 5: # Giro 180°
-            self.robobo.moveWheelsByTime(10, -10, 2)
+            self.robobo.moveWheelsByTime(10, 0, 1)
+            self.robobo.movePanTo(0, 100, True)
+
+
+        elif action == 6: # Giro 180°
+            self.robobo.movePanTo(90, 100, True)
+            self.robobo.moveWheelsByTime(10, -10, 1)
+            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(-10, 10, 1)
+            self.robobo.moveWheelsByTime(10, 10, 3)
+            
+
+        elif action == 7: # Giro 180°
+            self.robobo.movePanTo(-90, 100, True)
+            self.robobo.moveWheelsByTime(-10, 10, 1)
+            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(10, -10, 1)
+            self.robobo.moveWheelsByTime(10, 10, 3)
+            
 
         # Nuevo estado
         self.state = self._get_state()
@@ -167,7 +182,6 @@ class RoboboNEATAvoidEnv23(gym.Env):
 
     def _calculate_reward(self):
         """
-        Misma forma que 2.2/2.1:
         + ver blob, + tamaño, + centrado, - descentrado,
         - IR cerca si blob aún no es grande, - tiempo
         """
@@ -177,7 +191,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
         reward = 0.0
 
         if blob.size > self.BLOB_SIZE_MIN:
-            reward += 1.0
+            reward += 10.0
             reward += min(blob.size / 50.0, 5.0)
 
             center_error = abs(blob.posx - self.CENTER_X)
@@ -192,8 +206,8 @@ class RoboboNEATAvoidEnv23(gym.Env):
         else:
             reward -= 3.0
 
-        if ir_front < self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
-            reward -= 5.0
+        if ir_front < self.OBSTACLE_THRESHOLD_FRONT:
+            reward += 0.1
 
         reward -= 0.1
         return float(reward)
