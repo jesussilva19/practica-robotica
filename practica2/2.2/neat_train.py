@@ -70,9 +70,12 @@ def eval_genomes(genomes, config):
     global best_genome_ever, best_fitness_ever
     
     # Evaluar cada genoma
-    for genome_id, genome in genomes:
+    for i, (genome_id, genome) in enumerate(genomes, 1):
         fitness = eval_genome(genome, config)
         genome.fitness = fitness
+        
+        # Mostrar fitness de cada genoma
+        print(f"Genoma {i}/{len(genomes)} (ID: {genome_id}): Fitness = {fitness:.2f}")
         
         # Actualizar mejor genoma
         if fitness > best_fitness_ever:
