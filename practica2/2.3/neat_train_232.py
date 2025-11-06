@@ -24,24 +24,61 @@ def eval_genome(genome, config):
     obs, _ = env.reset()
     total = 0.0
     steps = 0
+    
+    # Trackear diversidad de acciones
+    action_counts = np.zeros(8)
+    last_action = -1
+    repeated_actions = 0
 
     try:
         done = False
         while not done and steps < env.max_steps:
             output = net.activate(obs)
+            
+            # Añadir pequeño ruido para fomentar exploración
+            output = np.array(output) + np.random.normal(0, 0.1, len(output))
+            
             action = int(np.argmax(output))
+            action_counts[action] += 1
+            
+            # Penalizar repetición excesiva de la misma acción
+            if action == last_action:
+                repeated_actions += 1
+                if repeated_actions > 5:
+                    total -= 2.0  # Penalización fuerte
+            else:
+                repeated_actions = 0
+            
+            last_action = action
+            
             obs, reward, terminated, truncated, _ = env.step(action)
             total += reward
             done = terminated or truncated
             steps += 1
+            
+            # Terminar anticipadamente si el fitness es muy malo
+            if total < -185:
+                print(f"  Individuo eliminado por fitness muy bajo ({total:.2f})")
+                env.close()
+                return -200.0  # Fitness de penalización
+            
+        # Bonificación por usar variedad de acciones
+        unique_actions = np.count_nonzero(action_counts)
+        diversity_bonus = unique_actions * 3.0
+        total += diversity_bonus
+        
+        # Penalización severa si usa solo 1-2 acciones
+        if unique_actions <= 2:
+            total -= 30.0
+            
+        print(f"   ✅ Fitness: {total:.2f} | Acciones únicas: {unique_actions}/8")
+            
     except Exception as e:
         print(f"❌ Error evaluando genoma: {e}")
         total = -100.0
     finally:
         env.close()
 
-    # 🔹 Mostrar el fitness conseguido por este individuo
-    print(f"   ➤ Fitness del individuo: {total:.2f}")
     return float(total)
 
 # === Evaluación de todos los genomas de una generación ===
@@ -76,7 +113,7 @@ def plot_stats(stats):
     print("📈 Gráfica de aprendizaje guardada")
 
 # === Ejecución principal del algoritmo NEAT ===
-def run(config_file, generations=10):
+def run(config_file, generations=10, previous_best_genome_path=None):
     config = neat.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,
@@ -86,6 +123,19 @@ def run(config_file, generations=10):
     )
 
     p = neat.Population(config)
+    
+    # Si hay un genoma previo, añadirlo a la población inicial
+    if previous_best_genome_path and os.path.exists(previous_best_genome_path):
+        print(f"📥 Cargando mejor genoma anterior desde: {previous_best_genome_path}")
+        with open(previous_best_genome_path, "rb") as f:
+            best_genome = pickle.load(f)
+        
+        # Añadir el mejor genoma a la población inicial
+        # Reemplazar un individuo aleatorio con el mejor anterior
+        genome_id = list(p.population.keys())[0]
+        p.population[genome_id] = best_genome
+        print(f"✅ Mejor genoma anterior añadido a la población inicial (ID: {genome_id})")
+    
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
@@ -93,7 +143,9 @@ def run(config_file, generations=10):
 
     print("\n🧠 Iniciando evolución con NEAT (Práctica 2.3)...")
     print(f"Generaciones: {generations}")
-    print(f"Tamaño población: {config.pop_size}")
+    print(f"Tamaño población inicial: {config.pop_size}")
+    print(f"Elitism: {config.reproduction_config.elitism}")
+    print(f"Especies elitism: {config.stagnation_config.species_elitism}")
 
     winner = p.run(eval_genomes, generations)
 
@@ -116,4 +168,9 @@ if __name__ == "__main__":
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encuentra config: {config_path}")
 
-    run(config_path, generations=12)
+    # OPCIONAL: Ruta al mejor genoma de una ejecución anterior
+    # Descomenta y ajusta la ruta si quieres usar un genoma previo
+    previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/best_genome_extracted.pkl"
+    # previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_123456/models/best_genome.pkl"
+    
+    run(config_path, generations=10, previous_best_genome_path=previous_best)

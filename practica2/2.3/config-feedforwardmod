@@ -3,7 +3,7 @@
 [NEAT]
 fitness_criterion     = max
 fitness_threshold     = 999999999
-pop_size              = 50
+pop_size              = 40
 reset_on_extinction   = False
 
 [DefaultGenome]
@@ -19,12 +19,12 @@ aggregation_options     = sum
 
 # bias
 bias_init_mean          = 0.0
-bias_init_stdev         = 1.0
+bias_init_stdev         = 2.0
 bias_max_value          = 30.0
 bias_min_value          = -30.0
-bias_mutate_power       = 2.0
-bias_mutate_rate        = 0.90
-bias_replace_rate       = 0.15
+bias_mutate_power       = 3.0
+bias_mutate_rate        = 0.95
+bias_replace_rate       = 0.20
 
 # compatibility
 compatibility_disjoint_coefficient = 1.0
@@ -59,24 +59,25 @@ response_replace_rate   = 0.05
 
 # weights
 weight_init_mean        = 0.0
-weight_init_stdev       = 1.0
+weight_init_stdev       = 2.0
 weight_max_value        = 30
 weight_min_value        = -30
-weight_mutate_power     = 2.5
-weight_mutate_rate      = 0.95
-weight_replace_rate     = 0.15
+weight_mutate_power     = 3.5
+weight_mutate_rate      = 0.98
+weight_replace_rate     = 0.25
 
 [DefaultSpeciesSet]
-compatibility_threshold = 3.5
+compatibility_threshold = 3.0
 
 [DefaultStagnation]
 species_fitness_func = max
-max_stagnation       = 10
-species_elitism      = 1
+max_stagnation       = 15
+species_elitism      = 2
 
 [DefaultReproduction]
-elitism            = 10
+elitism            = 2
 survival_threshold = 0.2
+min_species_size   = 2
 
 
 
