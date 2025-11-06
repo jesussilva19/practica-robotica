@@ -1,4 +1,4 @@
-# neat_train_23.py
+# neat_continue_from_checkpoint.py
 import neat
 import pickle
 import os
@@ -126,7 +126,7 @@ def plot_stats(stats):
     plt.plot(gens, avg, '--', label='Fitness Promedio', linewidth=2)
     plt.xlabel('Generación')
     plt.ylabel('Fitness')
-    plt.title('Evolución del Fitness - Práctica 2.3')
+    plt.title('Evolución del Fitness - Práctica 2.3 (Continuación)')
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
@@ -135,7 +135,15 @@ def plot_stats(stats):
     print("📈 Gráfica de aprendizaje guardada")
 
 # === Ejecución principal del algoritmo NEAT ===
-def run(config_file, generations=10, previous_best_genome_path=None):
+def run(config_file, generations=10, checkpoint_path=None):
+    """
+    Ejecuta el entrenamiento con NEAT.
+    
+    Args:
+        config_file: Ruta al archivo de configuración NEAT
+        generations: Número de generaciones adicionales a entrenar
+        checkpoint_path: Ruta a un checkpoint previo para continuar entrenamiento
+    """
     config = neat.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,
@@ -143,102 +151,117 @@ def run(config_file, generations=10, previous_best_genome_path=None):
         neat.DefaultStagnation,
         config_file
     )
-
-    p = neat.Population(config)
     
-    loaded_genome_id = None  # Para trackear el genoma cargado
-    
-    # Si hay un genoma previo, añadirlo a la población inicial
-    if previous_best_genome_path and os.path.exists(previous_best_genome_path):
-        print(f"📥 Cargando mejor genoma anterior desde: {previous_best_genome_path}")
+    # Cargar desde checkpoint o crear población nueva
+    if checkpoint_path and os.path.exists(checkpoint_path):
+        print(f"\n{'='*70}")
+        print(f"📥 RESTAURANDO DESDE CHECKPOINT")
+        print(f"{'='*70}")
+        print(f"Archivo: {checkpoint_path}")
+        
         try:
-            with open(previous_best_genome_path, "rb") as f:
-                best_genome = pickle.load(f)
+            p = neat.Checkpointer.restore_checkpoint(checkpoint_path)
             
-            # Obtener un ID válido para el nuevo genoma
-            genome_id = max(p.population.keys()) + 1
-            loaded_genome_id = genome_id  # Guardar para identificarlo después
+            print(f"✅ Checkpoint cargado exitosamente")
+            print(f"   📊 Generación inicial: {p.generation}")
+            print(f"   👥 Tamaño población: {len(p.population)}")
+            print(f"   🧬 Número de especies: {len(p.species.species)}")
             
-            # Crear una copia del genoma con el nuevo ID
-            new_genome = config.genome_type(genome_id)
-            new_genome.configure_crossover(best_genome, best_genome, config.genome_config)
-            new_genome.nodes = best_genome.nodes
-            new_genome.connections = best_genome.connections
+            # Mostrar estadísticas del mejor genoma actual
+            best_genome = None
+            best_fitness = float('-inf')
+            for gid, genome in p.population.items():
+                if genome.fitness is not None and genome.fitness > best_fitness:
+                    best_fitness = genome.fitness
+                    best_genome = genome
             
-            # IMPORTANTE: Evaluar inmediatamente para evitar fitness None
-            print(f"\n{'='*60}")
-            print(f"🔄 EVALUANDO GENOMA CARGADO (ID: {genome_id})...")
-            print(f"{'='*60}")
-            new_genome.fitness = eval_genome(new_genome, config)
-            print(f"{'='*60}")
-            print(f"✅ GENOMA ANTERIOR EVALUADO: Fitness = {new_genome.fitness:.2f}")
-            print(f"{'='*60}\n")
+            if best_genome:
+                print(f"   🏆 Mejor fitness actual: {best_fitness:.2f}")
+                print(f"   🧠 Tamaño red mejor: ({len(best_genome.nodes)} nodos, {len(best_genome.connections)} conexiones)")
             
-            # Añadir a la población (no reemplazar)
-            p.population[genome_id] = new_genome
+            print(f"{'='*70}\n")
             
-            print(f"✅ Mejor genoma anterior añadido a la población inicial")
-            print(f"   Tamaño población actual: {len(p.population)} genomas\n")
         except Exception as e:
-            print(f"⚠️ Error al cargar genoma anterior: {e}")
-            print("Continuando sin genoma previo...")
+            print(f"❌ Error al cargar checkpoint: {e}")
+            print("Creando nueva población desde cero...")
             import traceback
             traceback.print_exc()
+            p = neat.Population(config)
+            
+    else:
+        if checkpoint_path:
+            print(f"⚠️ Checkpoint no encontrado: {checkpoint_path}")
+        print(f"\n🆕 Creando nueva población desde cero...")
+        p = neat.Population(config)
     
-    # CRÍTICO: Evaluar toda la población inicial para evitar fitness None
-    print("\n🔄 Evaluando población inicial completa...")
-    initial_genomes = list(p.population.items())
-    for gid, genome in initial_genomes:
-        if genome.fitness is None:
-            # Identificar si es el genoma cargado
-            if gid == loaded_genome_id:
-                print(f"  ⏭️ Genoma {gid} (CARGADO) ya evaluado - saltando")
-                continue
-            genome.fitness = eval_genome(genome, config)
-            print(f"  ✅ Genoma {gid} evaluado: Fitness = {genome.fitness:.2f}")
-    print("✅ Población inicial completamente evaluada\n")
-    
-    # CRÍTICO: Re-especiar después de añadir el genoma cargado
-    if loaded_genome_id is not None:
-        print("🔄 Re-especiando población con genoma cargado...")
-        p.species.speciate(config, p.population, p.generation)
-        print("✅ Especiación actualizada\n")
-    
+    # Añadir reporters
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(5, filename_prefix=f"{models_dir}neat-checkpoint-"))
 
     print("\n🧠 Iniciando evolución con NEAT (Práctica 2.3)...")
-    print(f"Generaciones: {generations}")
-    print(f"Tamaño población inicial: {config.pop_size}")
-    print(f"Elitism: {config.reproduction_config.elitism}")
-    print(f"Especies elitism: {config.stagnation_config.species_elitism}")
-
+    if checkpoint_path and os.path.exists(checkpoint_path):
+        print(f"📍 Continuando desde generación: {p.generation}")
+        print(f"➕ Generaciones adicionales: {generations}")
+        print(f"🎯 Generación final esperada: {p.generation + generations}")
+    else:
+        print(f"🆕 Entrenamiento nuevo desde generación 0")
+        print(f"📊 Generaciones totales: {generations}")
+    
+    print(f"👥 Tamaño población: {config.pop_size}")
+    print(f"🏅 Elitism: {config.reproduction_config.elitism}")
+    print(f"🧬 Especies elitism: {config.stagnation_config.species_elitism}")
+    print(f"{'='*70}\n")
+    
+    # Ejecutar evolución
     winner = p.run(eval_genomes, generations)
 
+    # Guardar mejor genoma
     with open(f"{models_dir}best_genome.pkl", "wb") as f:
         pickle.dump(winner, f)
 
-    print("\n✅ Evolución completada!")
+    print("\n" + "="*70)
+    print("🎉 EVOLUCIÓN COMPLETADA")
+    print("="*70)
     print(f"🏆 Mejor fitness alcanzado: {winner.fitness:.2f}")
+    print(f"📊 Generación final: {p.generation}")
+    print(f"🧠 Tamaño red ganadora:")
+    print(f"   - Nodos: {len(winner.nodes)}")
+    print(f"   - Conexiones: {len(winner.connections)}")
+    print(f"📁 Mejor genoma guardado en: {models_dir}best_genome.pkl")
+    print("="*70 + "\n")
 
+    # Guardar estadísticas
     with open(f"{log_dir}stats.pkl", "wb") as f:
         pickle.dump(stats, f)
 
     plot_stats(stats)
+    
     return winner, config, stats
+
 
 # === MAIN ===
 if __name__ == "__main__":
-    # Ajusta si tu config tiene otra ruta/nombre
     config_path = "practica2/2.3/config-feedforwardmod"
+    
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encuentra config: {config_path}")
-
-    # OPCIONAL: Ruta al mejor genoma de una ejecución anterior
-    # Descomenta y ajusta la ruta si quieres usar un genoma previo
-    previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/best_genome_extracted.pkl"
-    # previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_123456/models/best_genome.pkl"
     
-    run(config_path, generations=10, previous_best_genome_path=previous_best)
+    # ================================================================
+    # CONFIGURACIÓN: Elige una de las siguientes opciones
+    # ================================================================
+    
+    # OPCIÓN 1: Continuar desde un checkpoint específico (RECOMENDADO)
+    checkpoint = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/neat-checkpoint-1"
+    
+    # OPCIÓN 2: Buscar el checkpoint más reciente automáticamente
+    # checkpoint = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/neat-checkpoint-5"
+    
+    # OPCIÓN 3: Empezar desde cero (nueva población)
+    # checkpoint = None
+    
+    # ================================================================
+    # EJECUTAR ENTRENAMIENTO
+    # ================================================================
+    run(config_path, generations=10, checkpoint_path=checkpoint)
