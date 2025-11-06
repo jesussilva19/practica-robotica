@@ -86,7 +86,7 @@ if __name__ == "__main__":
         checkpoint_path = sys.argv[1]
     else:
         # Ruta por defecto
-        checkpoint_path = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/neat-checkpoint-1"
+        checkpoint_path = "C:\\Users\\jesus\\Desktop\\practica-robotica\\practica2\\2.3\\neat_logs_2.3.2\\20251106_185011\\models\\neat-checkpoint-8"
     
     # Ruta de salida opcional
     output_path = sys.argv[2] if len(sys.argv) > 2 else None

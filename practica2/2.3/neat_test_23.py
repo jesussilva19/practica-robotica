@@ -14,7 +14,7 @@ from main_neat_avoid_23 import RoboboNEATAvoidEnv23
 # CONFIGURACIÓN AUTOMÁTICA
 # ============================================================
 
-GENOME_PATH = "practica2/2.3/neat_logs_2.3/20251105_222545/models/best_genome.pkl"
+GENOME_PATH = "C:\\Users\\jesus\\Desktop\\practica-robotica\\practica2\\2.3\\neat_logs_2.3.2\\20251106_185011\\models\\best_genome_extracted.pkl"
 CONFIG_PATH = "practica2/2.3/config-feedforwardmod"
 NUM_EPISODES = 3
 MAX_STEPS = 200
@@ -35,7 +35,7 @@ def load_genome(genome_path):
     return genome
 
 
-def run_episodes(genome, config, num_episodes=3, max_steps=200, render=False):
+def run_episodes(genome, config, num_episodes=3, max_steps=30, render=False):
     """Ejecuta varios episodios en el entorno RoboboNEATAvoidEnv23"""
     net = neat.nn.FeedForwardNetwork.create(genome, config)
 
