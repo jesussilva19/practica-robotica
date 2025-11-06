@@ -9,7 +9,7 @@ from main_neat_avoid_232 import RoboboNEATAvoidEnv23
 
 # === Configuración de directorios ===
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_dir = f"practica2/2.3/neat_logs_2.3/{timestamp}/"
+log_dir = f"practica2/2.3/neat_logs_2.3.2/{timestamp}/"
 models_dir = f"{log_dir}models/"
 graphs_dir = f"{log_dir}graphs/"
 os.makedirs(models_dir, exist_ok=True)
@@ -20,7 +20,7 @@ print(f"📂 Directorio de logs: {log_dir}")
 # === Evaluación de un genoma individual ===
 def eval_genome(genome, config):
     net = neat.nn.FeedForwardNetwork.create(genome, config)
-    env = RoboboNEATAvoidEnv23(max_steps=50)
+    env = RoboboNEATAvoidEnv23(max_steps=45)
     obs, _ = env.reset()
     total = 0.0
     steps = 0
@@ -116,4 +116,4 @@ if __name__ == "__main__":
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encuentra config: {config_path}")
 
-    run(config_path, generations=10)
+    run(config_path, generations=12)
