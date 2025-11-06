@@ -119,7 +119,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
         # Acciones 
         if action == 0:   # Avanzar recto
             self.robobo.movePanTo(0, 100, True)
-            self.robobo.moveWheelsByTime(10, 10, 1)
+            self.robobo.moveWheelsByTime(20, 20, 1)
             
         elif action == 1: # Girar izquierda (leve)
             self.robobo.movePanTo(0, 100, True)
@@ -139,7 +139,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
             
         elif action == 5: # Giro 180°
             self.robobo.movePanTo(0, 100, True)
-            self.robobo.moveWheelsByTime(10, 0, 1)
+            self.robobo.moveWheelsByTime(10, -10, 1)
             
             
 
@@ -147,17 +147,17 @@ class RoboboNEATAvoidEnv23(gym.Env):
         elif action == 6: # Giro 180°
             self.robobo.movePanTo(45, 100, True)
             self.robobo.moveWheelsByTime(10, -10, 1)
-            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(20, 20, 1)
             self.robobo.moveWheelsByTime(-10, 10, 1)
-            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(20, 20, 1)
             
 
         elif action == 7: # Giro 180°
             self.robobo.movePanTo(-45, 100, True)
             self.robobo.moveWheelsByTime(-10, 10, 1)
-            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(20, 20, 1)
             self.robobo.moveWheelsByTime(10, -10, 1)
-            self.robobo.moveWheelsByTime(10, 10, 3)
+            self.robobo.moveWheelsByTime(20, 20, 1)
             
 
         # Nuevo estado
@@ -188,36 +188,65 @@ class RoboboNEATAvoidEnv23(gym.Env):
         return self.state, reward, terminated, truncated, {}
 
     def _calculate_reward(self):
-        """
-        + ver blob, + tamaño, + centrado, - descentrado,
-        - IR cerca si blob aún no es grande, - tiempo
-        """
-        blob = self.robobo.readColorBlob(BlobColor.RED)
-        ir_front = self.robobo.readIRSensor(IR.FrontC)
+            """
+            Función de fitness/recompensa para NEAT.
+            Premia acercarse al objetivo y mantenerlo centrado.
+            """
+            blob = self.robobo.readColorBlob(BlobColor.RED)
+            ir_front = self.robobo.readIRSensor(IR.FrontC)
+            blob_loc = self.sim.getObjectLocation('CYLINDERBALL')
+            robobo_loc = self.sim.getRobotLocation(0)
 
-        reward = 0.0
+            blob_loc = blob_loc['position']
+            robobo_loc = robobo_loc['position']
+            
+            # Calcular distancia al objetivo
+            distance = np.sqrt(
+                (blob_loc['x'] - robobo_loc['x'])**2 +
+                (blob_loc['y'] - robobo_loc['y'])**2 +
+                (blob_loc['z'] - robobo_loc['z'])**2
+            )
 
-        if blob.size > self.BLOB_SIZE_MIN:
-            reward += 10.0
-            reward += min(blob.size / 50.0, 5.0)
+            reward = 0.0
+            # Recompensa por ver el blob (detectar el objetivo)
+            if blob.size > self.BLOB_SIZE_MIN:
+                reward += 10.0
+                
+                # Recompensa por tamaño del blob (más grande = más cerca)
+                size_reward = min(blob.size / 50.0, 5.0)  # Máximo 5 puntos
+                reward += size_reward
+                
+                # Recompensa por centrar el blob
+                center_error = abs(blob.posx - 50.0)  # 50 es el centro
+                if center_error < 10:
+                    reward += 3.0  # Muy centrado
+                elif center_error < 20:
+                    reward += 1.5  # Bastante centrado
+                elif center_error < 30:
+                    reward += 0.5  # Algo centrado
+                
+                # Penalización por estar descentrado
+                reward -= center_error / 50.0
+                
+            else:
+                # Penalización fuerte si no ve el objetivo
+                reward -= 1.0
+            
+            # Penalización por estar muy cerca de obstáculos (excepto el objetivo)
+            if ir_front > self.OBSTACLE_THRESHOLD_FRONT:
+                reward += 0.05
+            
+            # Penalización muy pequeña por cada paso (menos énfasis en rapidez)
+            reward -= 0.05
 
-            center_error = abs(blob.posx - self.CENTER_X)
-            if center_error < 10:
-                reward += 3.0
-            elif center_error < 20:
-                reward += 1.5
-            elif center_error < 30:
-                reward += 0.5
+            # Recompensa por acercarse al objetivo (menor distancia)
+            if distance > 0:
+                reward += 500.0 / distance  # Más cerca = mayor recompensa
 
-            reward -= center_error / 50.0
-        else:
-            reward -= 3.0
 
-        if ir_front < self.OBSTACLE_THRESHOLD_FRONT:
-            reward += 0.1
 
-        reward -= 0.1
-        return float(reward)
+            
+            return reward
 
     def render(self):
         blob = self.robobo.readColorBlob(BlobColor.RED)

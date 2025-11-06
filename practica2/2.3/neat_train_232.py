@@ -5,7 +5,7 @@ import os
 import numpy as np
 from datetime import datetime
 import matplotlib.pyplot as plt
-from main_neat_avoid_23 import RoboboNEATAvoidEnv23
+from main_neat_avoid_232 import RoboboNEATAvoidEnv23
 
 # === Configuración de directorios ===
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
