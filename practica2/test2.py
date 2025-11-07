@@ -10,11 +10,11 @@ import os
 import neat_test
 from p22.main_neat import RoboboNEATEnv
 
-genome_path = os.path.join(os.path.dirname(__file__), 'p22', 'neat_logs_2.2', 'ultimo', 'models', 'best_genome.pkl')
+genome_path = os.path.join(os.path.dirname(__file__), 'p22', 'neat', 'models', 'best_genome.pkl')
 num_episodes = 3
 config_path = os.path.join(os.path.dirname(__file__), 'p22', 'config-feedforward')
 output_folder = os.path.join(os.path.dirname(__file__), 'test_results_2.2')
-background_image = os.path.join(os.path.dirname(__file__), 'p22', 'entorno2.png')  # Puedes especificar una ruta aquí si tienes imagen
+background_image = os.path.join(os.path.dirname(__file__), 'test_results_2.2', 'entorno2.png')  # Puedes especificar una ruta aquí si tienes imagen
 
 
 def main():

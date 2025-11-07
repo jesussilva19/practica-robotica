@@ -14,11 +14,11 @@ import os
 import neat_test
 from p21.main_neat import RoboboNEATEnv
 
-genome_path = os.path.join(os.path.dirname(__file__), 'p21', 'neat_logs_2.1', 'ultimo', 'models', 'best_genome.pkl')
+genome_path = os.path.join(os.path.dirname(__file__), 'p21', 'neat', 'models', 'best_genome.pkl')
 num_episodes = 3
 config_path = os.path.join(os.path.dirname(__file__), 'p21', 'config-feedforward')
 output_folder = os.path.join(os.path.dirname(__file__), 'test_results_2.1')
-background_image = os.path.join(os.path.dirname(__file__), 'p21', 'entorno1.png')  # Puedes especificar una ruta aquí si tienes imagen
+background_image = os.path.join(os.path.dirname(__file__), 'test_results_2.1', 'entorno1.png')  # Puedes especificar una ruta aquí si tienes imagen
 
 
 def main():

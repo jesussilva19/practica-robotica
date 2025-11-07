@@ -277,10 +277,8 @@ def test_genome_simple(genome_path, config_path, env_class, num_episodes,
                 goal_location = env.sim.getObjectLocation('CYLINDERMIDBALL')
                 goal_position = (goal_location['position']['x'], goal_location['position']['z'])
             except:
-                pass
-        else:
-            goal_location = env.sim.getObjectLocation('CYLINDERBALL')
-            goal_position = (goal_location['position']['x'], goal_location['position']['z'])
+                goal_location = env.sim.getObjectLocation('CYLINDERBALL')
+                goal_position = (goal_location['position']['x'], goal_location['position']['z'])
 
         # Guardar resultados
         total_rewards.append(total_reward)

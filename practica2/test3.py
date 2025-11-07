@@ -18,18 +18,18 @@ from p23.main_ppo import RoboboEnv # entorno AR
 # CONFIG
 # ============================================================
 
-GENOME_PATH = os.path.join(os.path.dirname(__file__), 'p23', 'neat_logs_2.3.2', 'definitivo', 'models', 'best_genome_extracted.pkl')
+GENOME_PATH = os.path.join(os.path.dirname(__file__), 'p23', 'neat', 'models', 'best_genome_extracted.pkl')
 
 CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'p23', 'config-feedforward')
 PPO_MODEL_PATH = os.path.join(os.path.dirname(__file__),'p23', 'best_model.zip')
 
 NUM_EPISODES = 3
 MAX_STEPS = 300
-DIST_THRESHOLD = 1000.0  # 🔧 Cambia este valor a base de pruebas
+DIST_THRESHOLD = 1000.0  # Cambia este valor a base de pruebas
 RENDER = False
 
 output_path = os.path.join(os.path.dirname(__file__), 'test_results_2.3')
-background_image = os.path.join(os.path.dirname(__file__), 'p23', 'entorno3.png')  # Puedes especificar una ruta aquí si tienes imagen
+background_image = os.path.join(os.path.dirname(__file__), 'test_results_2.3', 'entorno3.png')  # Puedes especificar una ruta aquí si tienes imagen
 
 
 # ============================================================

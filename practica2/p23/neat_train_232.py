@@ -9,7 +9,7 @@ from main_neat_avoid_232 import RoboboNEATAvoidEnv23
 
 # === Configuración de directorios ===
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_dir = f"practica2/2.3/neat_logs_2.3.2/{timestamp}/"
+log_dir = f"practica2/p23/neat_logs_2.3/{timestamp}/"
 models_dir = f"{log_dir}models/"
 graphs_dir = f"{log_dir}graphs/"
 os.makedirs(models_dir, exist_ok=True)
@@ -71,10 +71,10 @@ def eval_genome(genome, config):
         if unique_actions <= 2:
             total -= 30.0
             
-        print(f"   ✅ Fitness: {total:.2f} | Acciones únicas: {unique_actions}/8")
+        print(f"Fitness: {total:.2f} | Acciones únicas: {unique_actions}/8")
             
     except Exception as e:
-        print(f"❌ Error evaluando genoma: {e}")
+        print(f"Error evaluando genoma: {e}")
         total = -100.0
     finally:
         try:
@@ -95,22 +95,22 @@ def eval_genomes(genomes, config):
     Imprime el fitness de cada individuo justo tras su evaluación.
     """
     for i, (gid, genome) in enumerate(genomes, start=1):
-        print(f"\n🚀 Evaluando individuo {i}/{len(genomes)} (ID {gid}) ...")
+        print(f"\nEvaluando individuo {i}/{len(genomes)} (ID {gid}) ...")
         try:
             genome.fitness = eval_genome(genome, config)
             # Asegurar que el fitness no sea None
             if genome.fitness is None:
                 genome.fitness = -200.0
-                print(f"⚠️ Fitness None detectado, asignado: {genome.fitness:.2f}")
+                print(f"Fitness None detectado, asignado: {genome.fitness:.2f}")
             else:
-                print(f"✅ Resultado final individuo {gid}: Fitness = {genome.fitness:.2f}")
+                print(f"Resultado final individuo {gid}: Fitness = {genome.fitness:.2f}")
         except Exception as e:
-            print(f"❌ Error crítico evaluando genoma {gid}: {e}")
+            print(f"Error crítico evaluando genoma {gid}: {e}")
             genome.fitness = -200.0  # Asignar fitness muy bajo en caso de error
         print("-" * 60)
     
     # VERIFICACIÓN FINAL: Asegurar que TODOS los genomas tienen fitness válido
-    for gid, genome in genomes:
+    for gid, genome in genomes: 
         if genome.fitness is None:
             print(f" ALERTA: Genoma {gid} aún tiene fitness None. Asignando -200.0")
             genome.fitness = -200.0
@@ -167,49 +167,48 @@ def run(config_file, generations=10, previous_best_genome_path=None):
             
             # IMPORTANTE: Evaluar inmediatamente para evitar fitness None
             print(f"\n{'='*60}")
-            print(f"🔄 EVALUANDO GENOMA CARGADO (ID: {genome_id})...")
+            print(f"EVALUANDO GENOMA CARGADO (ID: {genome_id})...")
             print(f"{'='*60}")
             new_genome.fitness = eval_genome(new_genome, config)
             print(f"{'='*60}")
-            print(f"✅ GENOMA ANTERIOR EVALUADO: Fitness = {new_genome.fitness:.2f}")
+            print(f"GENOMA ANTERIOR EVALUADO: Fitness = {new_genome.fitness:.2f}")
             print(f"{'='*60}\n")
             
             # Añadir a la población (no reemplazar)
             p.population[genome_id] = new_genome
             
-            print(f"✅ Mejor genoma anterior añadido a la población inicial")
+            print(f"Mejor genoma anterior añadido a la población inicial")
             print(f"   Tamaño población actual: {len(p.population)} genomas\n")
         except Exception as e:
-            print(f"⚠️ Error al cargar genoma anterior: {e}")
+            print(f"Error al cargar genoma anterior: {e}")
             print("Continuando sin genoma previo...")
             import traceback
             traceback.print_exc()
     
-    # CRÍTICO: Evaluar toda la población inicial para evitar fitness None
-    print("\n🔄 Evaluando población inicial completa...")
+
+    print("\nEvaluando población inicial completa...")
     initial_genomes = list(p.population.items())
     for gid, genome in initial_genomes:
         if genome.fitness is None:
             # Identificar si es el genoma cargado
             if gid == loaded_genome_id:
-                print(f"  ⏭️ Genoma {gid} (CARGADO) ya evaluado - saltando")
+                print(f"Genoma {gid} (CARGADO) ya evaluado - saltando")
                 continue
             genome.fitness = eval_genome(genome, config)
-            print(f"  ✅ Genoma {gid} evaluado: Fitness = {genome.fitness:.2f}")
-    print("✅ Población inicial completamente evaluada\n")
+            print(f"Genoma {gid} evaluado: Fitness = {genome.fitness:.2f}")
+    print("Población inicial completamente evaluada\n")
     
-    # CRÍTICO: Re-especiar después de añadir el genoma cargado
     if loaded_genome_id is not None:
-        print("🔄 Re-especiando población con genoma cargado...")
+        print("Re-especiando población con genoma cargado...")
         p.species.speciate(config, p.population, p.generation)
-        print("✅ Especiación actualizada\n")
+        print("Especiación actualizada\n")
     
     p.add_reporter(neat.StdOutReporter(True))
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
     p.add_reporter(neat.Checkpointer(5, filename_prefix=f"{models_dir}neat-checkpoint-"))
 
-    print("\n🧠 Iniciando evolución con NEAT (Práctica 2.3)...")
+    print("\nIniciando evolución con NEAT (Práctica 2.3)...")
     print(f"Generaciones: {generations}")
     print(f"Tamaño población inicial: {config.pop_size}")
     print(f"Elitism: {config.reproduction_config.elitism}")
@@ -220,8 +219,8 @@ def run(config_file, generations=10, previous_best_genome_path=None):
     with open(f"{models_dir}best_genome.pkl", "wb") as f:
         pickle.dump(winner, f)
 
-    print("\n✅ Evolución completada!")
-    print(f"🏆 Mejor fitness alcanzado: {winner.fitness:.2f}")
+    print("\nEvolución completada!")
+    print(f"Mejor fitness alcanzado: {winner.fitness:.2f}")
 
     with open(f"{log_dir}stats.pkl", "wb") as f:
         pickle.dump(stats, f)
@@ -232,11 +231,10 @@ def run(config_file, generations=10, previous_best_genome_path=None):
 # === MAIN ===
 if __name__ == "__main__":
   
-    config_path = "practica2/2.3/config-feedforwardmod"
+    config_path = "practica2/p23/config-feedforwardmod"
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encuentra config: {config_path}")
 
-    previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/best_genome_extracted.pkl"
-    # previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_123456/models/best_genome.pkl"
+    previous_best = "practica2/p23/neat_logs_2.3.2/20251106_160516/models/best_genome_extracted.pkl"
     
     run(config_path, generations=10, previous_best_genome_path=previous_best)

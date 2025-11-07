@@ -42,4 +42,4 @@ draw_net(
     prune_unused=False,     
     fmt="png"                 
 )
-print("✅ Red guardada como red_neat.png")
+print("Red guardada como red_neat.png")

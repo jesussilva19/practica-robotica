@@ -37,7 +37,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
         self.max_steps = max_steps
 
   
-        self.OBSTACLE_THRESHOLD_FRONT = 40   #
+        self.OBSTACLE_THRESHOLD_FRONT = 40  
         self.OBSTACLE_THRESHOLD_SIDE  = 300
         self.BLOB_SIZE_MIN            = 2
         self.BLOB_SIZE_GOAL           = 300
@@ -104,7 +104,6 @@ class RoboboNEATAvoidEnv23(gym.Env):
         blob_size = min(blob.size, 500.0)
 
         state = np.array([blob_x, blob_size, ir_c, ir_l, ir_r], dtype=np.float32)
-        # print("Estado:", state) 
         return state
 
     def _is_at_goal(self):
@@ -169,7 +168,7 @@ class RoboboNEATAvoidEnv23(gym.Env):
         # Terminación
         terminated = self._is_at_goal()
         if terminated:
-            print("🎯 ¡OBJETIVO ALCANZADO! 🎯")
+            print("¡OBJETIVO ALCANZADO!")
             reward += 500
 
         truncated = self.steps >= self.max_steps
@@ -232,14 +231,14 @@ class RoboboNEATAvoidEnv23(gym.Env):
                 # Penalización fuerte si no ve el objetivo
                 reward -= 1.0
             
-            # Penalización por estar muy cerca de obstáculos (excepto el objetivo)
+            # Penalización por estar muy cerca de obstáculos
             if ir_front > self.OBSTACLE_THRESHOLD_FRONT:
-                reward += 0.05
+                reward -= 0.05
             
-            # Penalización muy pequeña por cada paso (menos énfasis en rapidez)
+            # Penalización muy pequeña por cada paso
             reward -= 0.05
 
-            # Recompensa por acercarse al objetivo (menor distancia)
+            # Recompensa por acercarse al objetivo
             if distance > 0:
                 reward += 500.0 / distance  # Más cerca = mayor recompensa
 

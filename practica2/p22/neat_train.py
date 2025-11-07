@@ -152,7 +152,7 @@ def plot_stats(stats, winner, config):
     print(f"Gráfica de aprendizaje guardada")
     plt.close()
     
-    # 3. Gráfica de especies
+    # 2. Gráfica de especies
     try:
         from neat.graphs import plot_species
         plot_species(stats, filename=f'{graphs_dir}especies.png')
@@ -163,7 +163,7 @@ def plot_stats(stats, winner, config):
 
 if __name__ == '__main__':
     # Archivo de configuración
-    config_path = 'practica2/2.2/config-feedforward'
+    config_path = 'practica2/p22/config-feedforward'
 
     
     if not os.path.exists(config_path):

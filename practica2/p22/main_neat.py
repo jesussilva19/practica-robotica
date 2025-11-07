@@ -28,7 +28,6 @@ class RoboboNEATEnv(gym.Env):
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
         self.sim.setRobotLocation(0, {'x': -1000.0, 'y': 39.0, 'z': -400.0})
 
-        # NEAT necesita entradas continuas (no estados discretos)
         # Entradas: [blob_x, blob_size, ir_front_c, ir_front_l, ir_front_r]
         self.observation_space = spaces.Box(
             low=np.array([0.0, 0.0, 0.0, 0.0, 0.0]),
@@ -153,7 +152,7 @@ class RoboboNEATEnv(gym.Env):
         
         if terminated:
             print("¡OBJETIVO ALCANZADO!")
-            reward += 100  # Bonus por completar (reducido de 500 para mejor gradiente)
+            reward += 100  # Bonus por completar
         
         # Verificar condiciones de terminación por tiempo
         truncated = self.steps >= self.max_steps
@@ -185,7 +184,7 @@ class RoboboNEATEnv(gym.Env):
 
         reward = 0.0
         
-        # Recompensa base inversamente proporcional a la distancia (más agresiva)
+        # Recompensa base inversamente proporcional a la distancia 
         max_distance = 2000.0
         distance_reward = 25.0 * (1.0 - min(distance / max_distance, 1.0))
         reward += distance_reward
@@ -200,22 +199,22 @@ class RoboboNEATEnv(gym.Env):
             mega_bonus = (250 - distance) / 10.0  # Hasta +25 puntos adicionales
             reward += mega_bonus
         
-        # Recompensa por ver el blob (crítico para orientación)
+        # Recompensa por ver el blob
         if blob.size > self.BLOB_SIZE_MIN:
             reward += 8.0  # Aumentado de 5.0
             
             # Recompensa progresiva por tamaño (proximidad visual)
-            size_reward = min(blob.size / 25.0, 15.0)  # Máximo 15 puntos (antes 10)
+            size_reward = min(blob.size / 25.0, 15.0)  # Máximo 15 puntos
             reward += size_reward
             
-            # Recompensa crítica por centrar el blob (navegación correcta)
+            # Recompensa crítica por centrar el blob 
             center_error = abs(blob.posx - 50.0)
             if center_error < 10:
-                reward += 10.0  # Muy centrado (antes 8.0)
+                reward += 10.0  # Muy centrado
             elif center_error < 20:
-                reward += 5.0   # Bastante centrado (antes 4.0)
+                reward += 5.0   # Bastante centrado
             elif center_error < 30:
-                reward += 2.5   # Algo centrado (antes 2.0)
+                reward += 2.5   # Algo centrado
             else:
                 # Penalización progresiva por descentrado
                 reward -= center_error / 25.0
@@ -224,7 +223,7 @@ class RoboboNEATEnv(gym.Env):
             # Penalización moderada si no ve el objetivo
             reward -= 5.0
         
-        # Penalización por obstáculos (evitar colisiones)
+        # Penalización por obstáculos
         if ir_front > self.OBSTACLE_THRESHOLD_FRONT and blob.size < self.BLOB_SIZE_GOAL:
             reward -= 10.0  # Aumentado de 8.0
         
