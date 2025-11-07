@@ -1,7 +1,7 @@
 # draw_network.py
 import pickle
 import neat
-from visualize import draw_net  
+from practica2.codigo_aux.visualize import draw_net  
 
 # Rutas: ajusta a tu caso
 CONFIG_PATH = "practica2/p23/config-feedforward"
