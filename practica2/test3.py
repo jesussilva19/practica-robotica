@@ -28,8 +28,9 @@ MAX_STEPS = 300
 DIST_THRESHOLD = 1000.0  # Cambia este valor a base de pruebas
 RENDER = False
 
-output_path = os.path.join(os.path.dirname(__file__), 'test_results_2.3')
-background_image = os.path.join(os.path.dirname(__file__), 'test_results_2.3', 'entorno3.png')  # Puedes especificar una ruta aquí si tienes imagen
+output_dir = os.path.join(os.path.dirname(__file__), 'test_results_2.3')
+output_path = os.path.join(output_dir, 'hybrid_trajectories.png')
+background_image = os.path.join(output_dir, 'entorno3.png')  # Puedes especificar una ruta aquí si tienes imagen
 
 
 # ============================================================
@@ -104,7 +105,7 @@ def plot_hybrid_trajectories(all_trajectories, goal_position=None,
                        markersize=14,
                        markeredgecolor='darkgreen',
                        markeredgewidth=2,
-                       label='🟢 Inicio',
+                       label='Inicio',
                        zorder=50)
             else:
                 ax.plot(x_ae[0], y_ae[0],
@@ -156,7 +157,7 @@ def plot_hybrid_trajectories(all_trajectories, goal_position=None,
                        markersize=22,
                        markeredgecolor='black',
                        markeredgewidth=1.5,
-                       label='⭐ Fin',
+                       label='Fin',
                        zorder=55)
             else:
                 ax.plot(x_ar[-1], y_ar[-1],
