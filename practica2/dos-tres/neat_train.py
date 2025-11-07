@@ -8,7 +8,7 @@ from main_neat import RoboboNEATEnv
 
 # Configuración de directorios
 timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-log_dir = f"practica2/2.2/neat_logs_2.2/{timestamp}/"
+log_dir = f"practica2/dos-tres/neat_logs_dos_tres/{timestamp}/"
 models_dir = f"{log_dir}models/"
 graphs_dir = f"{log_dir}graphs/"
 
@@ -168,7 +168,7 @@ def plot_stats(stats, winner, config):
 
 if __name__ == '__main__':
     # Archivo de configuración
-    config_path = 'practica2/2.2/config-feedforward'
+    config_path = 'practica2/dos-tres/config-feedforward'
 
     
     if not os.path.exists(config_path):

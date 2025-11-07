@@ -26,7 +26,6 @@ class RoboboNEATEnv(gym.Env):
         # Configuración inicial de la cámara
         self.robobo.moveTiltTo(200, 70)
         self.robobo.setActiveBlobs(red=True, green=False, blue=False, custom=False)
-        self.sim.setRobotLocation(0, {'x': -1000.0, 'y': 39.0, 'z': -400.0})
 
         # NEAT necesita entradas continuas (no estados discretos)
         # Entradas: [blob_x, blob_size, ir_front_c, ir_front_l, ir_front_r]
@@ -60,7 +59,6 @@ class RoboboNEATEnv(gym.Env):
         
         # Reiniciar simulación
         self.sim.resetSimulation() 
-        self.sim.setRobotLocation(0, {'x': -1000.0, 'y': 39.0, 'z': -400.0})
 
         self.robobo.wait(1.0)
         # Reconfigurar cámara
