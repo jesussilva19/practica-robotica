@@ -4,8 +4,8 @@ import neat
 from visualize import draw_net  
 
 # Rutas: ajusta a tu caso
-CONFIG_PATH = "practica2/p21/config-feedforward"
-GENOME_PATH = "C://Users//jesus/Desktop/practica-robotica/practica2/p21/neat_logs_2.1/ultimo/models/best_genome.pkl"
+CONFIG_PATH = "practica2/p23/config-feedforward"
+GENOME_PATH = "practica2/p23/neat_logs_2.3.2/definitivo/models/best_genome_extracted.pkl"
 
 
 # 1) Cargar config NEAT
@@ -28,7 +28,7 @@ node_names = {
     #
      0: "Avanzar", 1: "GirarIzq_L", 2: "GirarDer_L",
      3: "GirarIzq_F", 4: "GirarDer_F", 5: "Giro180",
-     
+     6: "BuscarDer", 7: "BuscarIzq"
 }
 
 # 4) Dibujar (genera 'red_neat.svg' en el directorio actual)
