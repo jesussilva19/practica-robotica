@@ -24,7 +24,7 @@ CONFIG_PATH = os.path.join(os.path.dirname(__file__), 'p23', 'config-feedforward
 PPO_MODEL_PATH = os.path.join(os.path.dirname(__file__),'p23', 'best_model.zip')
 
 NUM_EPISODES = 3
-MAX_STEPS = 300
+MAX_STEPS = 150
 DIST_THRESHOLD = 1000.0  # Cambia este valor a base de pruebas
 RENDER = False
 
