@@ -145,7 +145,7 @@ def plot_stats(stats, winner, config):
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
     plt.savefig(f'{graphs_dir}aprendizaje.png', dpi=300)
-    print(f"📈 Gráfica de aprendizaje guardada")
+    print(f" Gráfica de aprendizaje guardada")
     plt.close()
     
     try:

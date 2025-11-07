@@ -152,11 +152,6 @@ def plot_stats(stats, winner, config):
     print(f"Gráfica de aprendizaje guardada")
     plt.close()
     
-    ## 2. Visualizar la red neuronal del mejor individuo
-    #from neat.graphs import draw_net
-    #draw_net(config, winner, True, filename=f'{graphs_dir}red_neuronal.png')
-    #print(f"🧠 Gráfica de red neuronal guardada")
-    
     # 3. Gráfica de especies
     try:
         from neat.graphs import plot_species

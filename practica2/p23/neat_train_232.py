@@ -15,7 +15,7 @@ graphs_dir = f"{log_dir}graphs/"
 os.makedirs(models_dir, exist_ok=True)
 os.makedirs(graphs_dir, exist_ok=True)
 
-print(f"📂 Directorio de logs: {log_dir}")
+print(f" Directorio de logs: {log_dir}")
 
 # === Evaluación de un genoma individual ===
 def eval_genome(genome, config):
@@ -112,7 +112,7 @@ def eval_genomes(genomes, config):
     # VERIFICACIÓN FINAL: Asegurar que TODOS los genomas tienen fitness válido
     for gid, genome in genomes:
         if genome.fitness is None:
-            print(f"⚠️ ALERTA: Genoma {gid} aún tiene fitness None. Asignando -200.0")
+            print(f" ALERTA: Genoma {gid} aún tiene fitness None. Asignando -200.0")
             genome.fitness = -200.0
 
 # === Gráfica de evolución ===
@@ -132,7 +132,7 @@ def plot_stats(stats):
     plt.tight_layout()
     plt.savefig(f"{graphs_dir}aprendizaje.png", dpi=300)
     plt.close()
-    print("📈 Gráfica de aprendizaje guardada")
+    print(" Gráfica de aprendizaje guardada")
 
 # === Ejecución principal del algoritmo NEAT ===
 def run(config_file, generations=10, previous_best_genome_path=None):
@@ -231,13 +231,11 @@ def run(config_file, generations=10, previous_best_genome_path=None):
 
 # === MAIN ===
 if __name__ == "__main__":
-    # Ajusta si tu config tiene otra ruta/nombre
+  
     config_path = "practica2/2.3/config-feedforwardmod"
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"No se encuentra config: {config_path}")
 
-    # OPCIONAL: Ruta al mejor genoma de una ejecución anterior
-    # Descomenta y ajusta la ruta si quieres usar un genoma previo
     previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_160516/models/best_genome_extracted.pkl"
     # previous_best = "practica2/2.3/neat_logs_2.3.2/20251106_123456/models/best_genome.pkl"
     

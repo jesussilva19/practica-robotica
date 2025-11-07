@@ -1,7 +1,7 @@
 import pickle
 import matplotlib.pyplot as plt
 
-# Ruta al archivo stats.pkl generado tras el entrenamiento
+
 STATS_PATH = "C:\\Users\\jesus\\Desktop\\practica-robotica\\practica2\\p23\\neat_logs_2.3.2\\definitivo\\stats.pkl"
 OUTPUT_PATH = "C:\\Users\\jesus\\Desktop\\practica-robotica\\practica2\\p23\\neat_logs_2.3.2\\definitivo\\graphs\\species_post.png"
 
@@ -29,4 +29,4 @@ plt.tight_layout()
 plt.savefig(OUTPUT_PATH, dpi=300)
 plt.close()
 
-print(f"📊 Gráfica de especies generada en: {OUTPUT_PATH}")
+print(f" Gráfica de especies generada en: {OUTPUT_PATH}")

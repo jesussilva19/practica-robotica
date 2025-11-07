@@ -257,6 +257,6 @@ class RoboboNEATAvoidEnv23(gym.Env):
         try:
             self.robobo.disconnect()
             self.sim.disconnect()
-            print("✅ Conexiones cerradas correctamente")
+            print(" Conexiones cerradas correctamente")
         except Exception as e:
-            print(f"❌ Error al cerrar conexiones: {e}")
+            print(f" Error al cerrar conexiones: {e}")

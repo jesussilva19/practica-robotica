@@ -3,7 +3,7 @@ import pickle
 import neat
 from practica2.codigo_aux.visualize import draw_net  
 
-# Rutas: ajusta a tu caso
+
 CONFIG_PATH = "practica2/p23/config-feedforward"
 GENOME_PATH = "practica2/p23/neat_logs_2.3.2/definitivo/models/best_genome_extracted.pkl"
 
@@ -31,15 +31,15 @@ node_names = {
      6: "BuscarDer", 7: "BuscarIzq"
 }
 
-# 4) Dibujar (genera 'red_neat.svg' en el directorio actual)
+
 draw_net(
     config=config,
     genome=genome,
-    view=False,                 # True para abrir tras generar
-    filename="red_neat",        # sin extensión; se usará .svg por defecto
+    view=False,             
+    filename="red_neat",    
     node_names=node_names,
-    show_disabled=True,         # muestra conexiones deshabilitadas en punteado
-    prune_unused=False,          # elimina nodos que no afectan a la salida
-    fmt="png"                   # "svg" (nítido) o "png"
+    show_disabled=True,     
+    prune_unused=False,     
+    fmt="png"                 
 )
 print("✅ Red guardada como red_neat.png")

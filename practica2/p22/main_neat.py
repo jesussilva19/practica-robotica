@@ -93,9 +93,9 @@ class RoboboNEATEnv(gym.Env):
 
         # Normalizar todo a [0, 1]
         state = np.array([
-            blob_x / 100.0,           # 0-100 -> 0-1
-            blob_size / 500.0,         # 0-500 -> 0-1
-            ir_front_c / 1000.0,       # 0-1000 -> 0-1
+            blob_x / 100.0,         
+            blob_size / 500.0,      
+            ir_front_c / 1000.0,    
             ir_front_l / 1000.0,
             ir_front_r / 1000.0
         ], dtype=np.float32)
