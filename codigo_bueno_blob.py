@@ -106,6 +106,7 @@ def run_one_episode(ppo_model, max_steps=150, render=False):
         while not done and steps < max_steps:
             # TELEOP
             if mode == "TELEOP":
+                
                 blob = env.robobo.readColorBlob(BlobColor.RED)
                 sees_red = (blob is not None) and (float(getattr(blob, "size", 0.0)) > BLOB_SEEN_MIN_SIZE)
                 if sees_red:
