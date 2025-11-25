@@ -32,11 +32,10 @@ SPEED_FWD = 30
 SPEED_TURN = 25
 CMD_MS = 300  # ms
 
-# Disparador AR
-BLOB_SEEN_MIN_SIZE = 0.0  # cambia a >0 si quieres evitar falsos positivos mínimos
 
-# ===================== TELEOP HELPERS =====================
-# Índices COCO (17 kp)
+BLOB_SEEN_MIN_SIZE = 0.0  
+
+
 NOSE=0; L_SHOULDER=5; R_SHOULDER=6; L_WRIST=9; R_WRIST=10
 
 def get_main_person_keypoints(result):
@@ -82,11 +81,8 @@ def gesture_from_keypoints(kp):
         return "STOP"
 
 # ===================== EPISODIO ÚNICO =====================
-def run_one_episode(ppo_model, max_steps=150, render=False):
-    """
-    - TELEOP con YOLO-Pose hasta ver blob rojo (size > 0).
-    - Cambia a AR (PPO) sin resetear simulación/conexiones.
-    """
+def run_one_episode(ppo_model, max_steps=150, render=True):
+
     env = RoboboEnv(max_steps=max_steps)  # conecta robobo y sim internamente
     obs, _ = env.reset()
 
@@ -106,7 +102,7 @@ def run_one_episode(ppo_model, max_steps=150, render=False):
         while not done and steps < max_steps:
             # TELEOP
             if mode == "TELEOP":
-                
+                env.robobo.movePanTo(90, 100, True)
                 blob = env.robobo.readColorBlob(BlobColor.RED)
                 sees_red = (blob is not None) and (float(getattr(blob, "size", 0.0)) > BLOB_SEEN_MIN_SIZE)
                 if sees_red:
