@@ -230,7 +230,7 @@ def main():
 
     mode = "TELEOP"
     ppo_steps = 0
-    last_cmd = None
+ 
 
     print("Teleoperación lista.")
     print("Gestos: ambos brazos=adelante; brazo izq=izq; brazo dcho=dcha; sin gesto=stop.")
@@ -295,19 +295,14 @@ def main():
                 print(f"[TELEOP] CMD: {cmd}")
 
                # Control continuo: solo envía comando si cambia el gesto
-                if cmd != last_cmd:
-                    print(f"[TELEOP] CMD: {cmd}")
-                    last_cmd = cmd
-                    
-                    # Ejecutar comando en el ROBOT REAL (continuo)
-                    if cmd == "FORWARD":
-                        rob.moveWheels(SPEED_FWD, SPEED_FWD)
-                    elif cmd == "TURN_LEFT":
-                        rob.moveWheels(-TURN_SPEED, TURN_SPEED)
-                    elif cmd == "TURN_RIGHT":
-                        rob.moveWheels(TURN_SPEED, -TURN_SPEED)
-                    else:  # STOP
-                        rob.stopMotors()
+                if cmd == "FORWARD":
+                    rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)  
+                elif cmd == "TURN_LEFT":
+                    rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_SHORT)
+                elif cmd == "TURN_RIGHT":
+                    rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_SHORT)
+                else:  # STOP o desconocido
+                    rob.stopMotors()
 
                 # Mostrar webcam con pose
                 annotated_pc = r_pose.plot()
