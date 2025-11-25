@@ -116,16 +116,20 @@ def compute_phone_state(det_results, frame_width):
     A partir de las detecciones de YOLO en la cámara del Robobo,
     devolvemos:
       - state: entero en [0,13] (como si fuera el estado del blob).
-      - seen: True si ha visto un 'backpack'.
+      - seen: True si ha visto un 'bottle'.
     Usamos la posición X del centro del bounding box.
+    
     """
+    # Esperar 1 segundo para asegurar que la imagen esté cargada
+    time.sleep(5)
+
     best_conf = 0.0
     best_xcenter = None
     for box in det_results[0].boxes:
         cls_id = int(box.cls)
         cls_name = det_results[0].names[cls_id]
         conf = float(box.conf)
-        if cls_name == "backpack" and conf > 0.5 and conf > best_conf:
+        if cls_name == "bottle" and conf > 0.5 and conf > best_conf:
             best_conf = conf
             x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
             best_xcenter = (x1 + x2) / 2.0
@@ -150,6 +154,7 @@ def apply_ppo_action(rob, action):
     Aplica una acción {0..5} como en tu RoboboEnv.step, pero en el robot real.
     """
     a = int(action)
+   # pequeño retardo para evitar comandos muy rápidos
     if a == 0:  # Avanzar recto
         rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
     elif a == 1:  # Girar izquierda leve
@@ -225,10 +230,11 @@ def main():
 
     mode = "TELEOP"
     ppo_steps = 0
+    last_cmd = None
 
     print("Teleoperación lista.")
     print("Gestos: ambos brazos=adelante; brazo izq=izq; brazo dcho=dcha; sin gesto=stop.")
-    print("Al detectar 'backpack' en la cámara del Robobo con conf>0.8, pasará a MODO PPO.\n")
+    print("Al detectar 'bottle' en la cámara del Robobo con conf>0.8, pasará a MODO PPO.\n")
 
     try:
         while True:
@@ -251,12 +257,12 @@ def main():
                 # Estado PPO basado en posición del móvil
                 phone_state, phone_seen = compute_phone_state(det_results, w)
 
-                # Condición de cambio TELEOP -> PPO: detección de backpack con alta conf
+                # Condición de cambio TELEOP -> PPO: detección de bottle con alta conf
                 for box in det_results[0].boxes:
                     cls_id = int(box.cls)
                     cls_name = det_results[0].names[cls_id]
                     conf = float(box.conf)
-                    if cls_name == "backpack" and conf > PHONE_CONF:
+                    if cls_name == "bottle" and conf > PHONE_CONF:
                         phone_seen_for_switch = True
                         break
 
@@ -264,7 +270,7 @@ def main():
             if mode == "TELEOP":
                 # Si se ha visto el móvil con suficiente confianza -> cambias a PPO
                 if phone_seen_for_switch:
-                    print("\nBACKPACK DETECTADO con suficiente confianza.")
+                    print("\nbottle DETECTADO con suficiente confianza.")
                     print("CAMBIO DE MODO: TELEOP ➜ PPO")
                     mode = "PPO"
                     # Pequeña pausa para que lo veas
@@ -288,21 +294,20 @@ def main():
 
                 print(f"[TELEOP] CMD: {cmd}")
 
-                # Ejecutar comando en el ROBOT REAL
-                if cmd == "FORWARD":
-                    rob.moveWheels(SPEED_FWD, SPEED_FWD)
-                    rob.wait(CMD_TIME_SHORT)
-                    rob.stopMotors()
-                elif cmd == "TURN_LEFT":
-                    rob.moveWheels(-TURN_SPEED, TURN_SPEED)
-                    rob.wait(CMD_TIME_SHORT)
-                    rob.stopMotors()
-                elif cmd == "TURN_RIGHT":
-                    rob.moveWheels(TURN_SPEED, -TURN_SPEED)
-                    rob.wait(CMD_TIME_SHORT)
-                    rob.stopMotors()
-                else:
-                    rob.stopMotors()
+               # Control continuo: solo envía comando si cambia el gesto
+                if cmd != last_cmd:
+                    print(f"[TELEOP] CMD: {cmd}")
+                    last_cmd = cmd
+                    
+                    # Ejecutar comando en el ROBOT REAL (continuo)
+                    if cmd == "FORWARD":
+                        rob.moveWheels(SPEED_FWD, SPEED_FWD)
+                    elif cmd == "TURN_LEFT":
+                        rob.moveWheels(-TURN_SPEED, TURN_SPEED)
+                    elif cmd == "TURN_RIGHT":
+                        rob.moveWheels(TURN_SPEED, -TURN_SPEED)
+                    else:  # STOP
+                        rob.stopMotors()
 
                 # Mostrar webcam con pose
                 annotated_pc = r_pose.plot()
@@ -332,6 +337,7 @@ def main():
 
             # ---------- 3) MODO PPO ----------
             else:  # mode == "PPO"
+                rob.moveTiltTo(90, 50)
                 if frame_phone is None:
                     # Si por lo que sea no tenemos frame, paramos y esperamos
                     rob.stopMotors()
