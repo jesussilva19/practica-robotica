@@ -120,9 +120,7 @@ def compute_phone_state(det_results, frame_width):
     Usamos la posición X del centro del bounding box.
     
     """
-    # Esperar 1 segundo para asegurar que la imagen esté cargada
-    time.sleep(5)
-
+    time.sleep(5)  # breve espera para asegurar que la imagen esté cargada
     best_conf = 0.0
     best_xcenter = None
     for box in det_results[0].boxes:
@@ -294,13 +292,13 @@ def main():
 
                 print(f"[TELEOP] CMD: {cmd}")
 
-               # Control continuo: solo envía comando si cambia el gesto
+               # Control continuo sin bloqueo: envía velocidades directamente
                 if cmd == "FORWARD":
-                    rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)  
+                    rob.moveWheels(SPEED_FWD, SPEED_FWD)
                 elif cmd == "TURN_LEFT":
-                    rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_SHORT)
+                    rob.moveWheels(0, SPEED_FWD)
                 elif cmd == "TURN_RIGHT":
-                    rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_SHORT)
+                    rob.moveWheels(SPEED_FWD, 0)
                 else:  # STOP o desconocido
                     rob.stopMotors()
 
