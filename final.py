@@ -13,15 +13,12 @@ import os
 IP = "192.168.1.140"       # IP del móvil con la app del Robobo
 
 # Modelos YOLO
-POSE_MODEL_PATH = "yolov8n-pose.pt"   # modelo de pose
-DET_MODEL_PATH  = "yolov8n.pt"        # modelo detección COCO
+POSE_MODEL_PATH = "yolo11n-pose.pt"   # modelo de pose (más ligero)
+DET_MODEL_PATH  = "yolo11n.pt"        # modelo detección COCO (más ligero)
 
-IMG_SIZE    = 320
+IMG_SIZE    = 160        # tamaño de imagen para YOLO (más rápido)
 POSE_CONF   = 0.5
 PHONE_CONF  = 0.5        # umbral para activar PPO
-
-# Control de FPS de la cámara del robot
-PROCESS_EVERY_N_FRAMES = 3  # Procesar 1 de cada 3 frames (~10 FPS)
 
 # PPO (usa el modelo de la práctica 1)
 BASE_DIR = os.path.dirname(__file__)
@@ -123,7 +120,7 @@ def compute_phone_state(det_results, frame_width):
     Usamos la posición X del centro del bounding box.
     
     """
-    time.sleep(5)  # breve espera para asegurar que la imagen esté cargada
+    time.sleep(3)  # evitar problemas de sincronización GPU
     best_conf = 0.0
     best_xcenter = None
     for box in det_results[0].boxes:
@@ -159,13 +156,13 @@ def apply_ppo_action(rob, action):
     if a == 0:  # Avanzar recto
         rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
     elif a == 1:  # Girar izquierda leve
-        rob.moveWheelsByTime(0, 3, CMD_TIME_SHORT)
+        rob.moveWheelsByTime(0, 2, CMD_TIME_SHORT)
     elif a == 2:  # Girar derecha leve
-        rob.moveWheelsByTime(3, 0, CMD_TIME_SHORT)
+        rob.moveWheelsByTime(2, 0, CMD_TIME_SHORT)
     elif a == 3:  # Girar izquierda fuerte
-        rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_LONG)
+        rob.moveWheelsByTime(0, 3, CMD_TIME_LONG)
     elif a == 4:  # Girar derecha fuerte
-        rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_LONG)
+        rob.moveWheelsByTime(3, 0, CMD_TIME_LONG)
     elif a == 5:  # Giro 180°
         rob.moveWheelsByTime(TURN_SPEED, -TURN_SPEED, CMD_TIME_TURN180)
     else:
@@ -215,6 +212,9 @@ def main():
 
     # Webcam del PC para los gestos
     cap = cv2.VideoCapture(0)
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 320)   # Resolución mínima para máxima fluidez
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 240)  # Resolución mínima para máxima fluidez
+    cap.set(cv2.CAP_PROP_FPS, 15)            # Limitar FPS
     assert cap.isOpened(), "No se pudo abrir la webcam del PC"
 
     # Modelos YOLO
@@ -231,7 +231,6 @@ def main():
 
     mode = "TELEOP"
     ppo_steps = 0
-    frame_count = 0  # Contador de frames
 
     print("Teleoperación lista.")
     print("Gestos: ambos brazos=adelante; brazo izq=izq; brazo dcho=dcha; sin gesto=stop.")
@@ -239,72 +238,56 @@ def main():
 
     try:
         while True:
-            frame_count += 1  # Incrementar contador
-            
             # ---------- 1) LEER CÁMARA DEL MÓVIL ----------
-            annotated_phone = None
             frame_phone = None
+            phone_state = 13
+            phone_seen_for_switch = False
+            
             try:
                 frame_phone, ts, sync_id, frame_id = video.getImageWithMetadata()
             except Exception:
                 frame_phone = None
 
-            phone_state = 13
-            phone_seen_for_switch = False
-
-            # Solo procesar cada N frames
-            if frame_phone is not None and (frame_count % PROCESS_EVERY_N_FRAMES == 0):
-                det_results = det_model.predict(frame_phone, imgsz=IMG_SIZE, conf=0.5, verbose=False)
-                annotated_phone = det_results[0].plot()
-                h, w, _ = frame_phone.shape
-
-                # Estado PPO basado en posición del móvil
-                phone_state, phone_seen = compute_phone_state(det_results, w)
-
-                # Condición de cambio TELEOP -> PPO: detección de bottle con alta conf
-                for box in det_results[0].boxes:
-                    cls_id = int(box.cls)
-                    cls_name = det_results[0].names[cls_id]
-                    conf = float(box.conf)
-                    if cls_name == "bottle" and conf > PHONE_CONF:
-                        phone_seen_for_switch = True
-                        break
-
             # ---------- 2) MODO TELEOP ----------
             if mode == "TELEOP":
+                # Detección ligera solo para verificar si hay bottle (sin anotar)
+                if frame_phone is not None:
+                    det_results = det_model.predict(frame_phone, imgsz=IMG_SIZE, conf=PHONE_CONF, verbose=False, device='0')
+                    for box in det_results[0].boxes:
+                        cls_id = int(box.cls)
+                        cls_name = det_results[0].names[cls_id]
+                        conf = float(box.conf)
+                        if cls_name == "bottle" and conf > PHONE_CONF:
+                            phone_seen_for_switch = True
+                            break
+                
                 # Si se ha visto el móvil con suficiente confianza -> cambias a PPO
                 if phone_seen_for_switch:
                     print("\nbottle DETECTADO con suficiente confianza.")
                     print("CAMBIO DE MODO: TELEOP ➜ PPO")
                     mode = "PPO"
-                    # Pequeña pausa para que lo veas
-                    time.sleep(1.5)
+                    ppo_steps = 0
                     continue  # siguiente iteración ya en modo PPO
 
                 # Si seguimos en TELEOP, usamos gestos
                 ok, frame_pc = cap.read()
                 if not ok:
-                    # aunque no haya frame de la webcam, seguimos refrescando ventanas
-                    if annotated_phone is not None:
-                        cv2.imshow("Camara Robobo + YOLO", annotated_phone)
                     if cv2.waitKey(1) & 0xFF == 27:
                         break
                     continue
 
-                pose_results = pose_model.predict(frame_pc, imgsz=IMG_SIZE, conf=POSE_CONF, verbose=False)
+                pose_results = pose_model.predict(frame_pc, imgsz=IMG_SIZE, conf=POSE_CONF, verbose=False, device='0')
                 r_pose = pose_results[0]
                 kp = get_main_person_keypoints(r_pose)
                 cmd = gesture_from_keypoints(kp)
 
-                print(f"[TELEOP] CMD: {cmd}")
-
                # Control continuo sin bloqueo: envía velocidades directamente
                 if cmd == "FORWARD":
-                    rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
+                    rob.moveWheels(SPEED_FWD, SPEED_FWD)
                 elif cmd == "TURN_LEFT":
-                    rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_SHORT)
+                    rob.moveWheels(0, SPEED_FWD)
                 elif cmd == "TURN_RIGHT":
-                    rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_SHORT)
+                    rob.moveWheels(SPEED_FWD, 0)
                 else:  # STOP o desconocido
                     rob.stopMotors()
 
@@ -321,19 +304,6 @@ def main():
                 )
                 cv2.imshow("Teleop Robobo REAL (YOLO-Pose)", annotated_pc)
 
-                # 🔹 Mostrar también la cámara del móvil (lo que ve el robot)
-                if annotated_phone is not None:
-                    cv2.putText(
-                        annotated_phone,
-                        f"MODE: {mode}",
-                        (15, 35),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0, 255, 0),
-                        2,
-                    )
-                    cv2.imshow("Camara Robobo + YOLO", annotated_phone)
-
             # ---------- 3) MODO PPO ----------
             else:  # mode == "PPO"
                 rob.moveTiltTo(90, 50)
@@ -344,6 +314,11 @@ def main():
                         break
                     continue
 
+                # Procesar detección SIN anotar (más rápido)
+                det_results = det_model.predict(frame_phone, imgsz=IMG_SIZE, conf=0.5, verbose=False, device='0')
+                h, w, _ = frame_phone.shape
+                phone_state, phone_seen = compute_phone_state(det_results, w)
+
                 # Estado ya calculado antes: phone_state (0..13)
                 obs = np.array([phone_state], dtype=np.int64)
                 action, _ = ppo_model.predict(obs, deterministic=True)
@@ -352,18 +327,17 @@ def main():
                 apply_ppo_action(rob, action)
                 ppo_steps += 1
 
-                # Mostrar cámara del Robobo con detecciones + estado/acción
-                if annotated_phone is not None:
-                    cv2.putText(
-                        annotated_phone,
-                        f"MODE: {mode} state:{phone_state} action:{int(action)}",
-                        (15, 35),
-                        cv2.FONT_HERSHEY_SIMPLEX,
-                        0.7,
-                        (0, 255, 0),
-                        2,
-                    )
-                    cv2.imshow("Camara Robobo + YOLO", annotated_phone)
+                # Mostrar frame RAW sin anotaciones (mucho más rápido)
+                cv2.putText(
+                    frame_phone,
+                    f"MODE: {mode} state:{phone_state} action:{int(action)}",
+                    (15, 35),
+                    cv2.FONT_HERSHEY_SIMPLEX,
+                    0.7,
+                    (0, 255, 0),
+                    2,
+                )
+                cv2.imshow("Camara Robobo + YOLO", frame_phone)
 
                 if ppo_steps >= MAX_PPO_STEPS:
                     print("MAX_PPO_STEPS alcanzado. Terminando.")
