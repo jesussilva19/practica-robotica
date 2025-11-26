@@ -10,15 +10,18 @@ import numpy as np
 import os
 
 # ================== CONFIG ==================
-IP = "172.20.10.2"          # IP del móvil con la app del Robobo
+IP = "192.168.1.140"       # IP del móvil con la app del Robobo
 
 # Modelos YOLO
-POSE_MODEL_PATH = "yolo11n-pose.pt"   # modelo de pose
-DET_MODEL_PATH  = "yolo11n.pt"        # modelo detección COCO
+POSE_MODEL_PATH = "yolov8n-pose.pt"   # modelo de pose
+DET_MODEL_PATH  = "yolov8n.pt"        # modelo detección COCO
 
-IMG_SIZE    = 640
+IMG_SIZE    = 320
 POSE_CONF   = 0.5
 PHONE_CONF  = 0.5        # umbral para activar PPO
+
+# Control de FPS de la cámara del robot
+PROCESS_EVERY_N_FRAMES = 3  # Procesar 1 de cada 3 frames (~10 FPS)
 
 # PPO (usa el modelo de la práctica 1)
 BASE_DIR = os.path.dirname(__file__)
@@ -228,7 +231,7 @@ def main():
 
     mode = "TELEOP"
     ppo_steps = 0
- 
+    frame_count = 0  # Contador de frames
 
     print("Teleoperación lista.")
     print("Gestos: ambos brazos=adelante; brazo izq=izq; brazo dcho=dcha; sin gesto=stop.")
@@ -236,6 +239,8 @@ def main():
 
     try:
         while True:
+            frame_count += 1  # Incrementar contador
+            
             # ---------- 1) LEER CÁMARA DEL MÓVIL ----------
             annotated_phone = None
             frame_phone = None
@@ -247,7 +252,8 @@ def main():
             phone_state = 13
             phone_seen_for_switch = False
 
-            if frame_phone is not None:
+            # Solo procesar cada N frames
+            if frame_phone is not None and (frame_count % PROCESS_EVERY_N_FRAMES == 0):
                 det_results = det_model.predict(frame_phone, imgsz=IMG_SIZE, conf=0.5, verbose=False)
                 annotated_phone = det_results[0].plot()
                 h, w, _ = frame_phone.shape
@@ -294,11 +300,11 @@ def main():
 
                # Control continuo sin bloqueo: envía velocidades directamente
                 if cmd == "FORWARD":
-                    rob.moveWheels(SPEED_FWD, SPEED_FWD)
+                    rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
                 elif cmd == "TURN_LEFT":
-                    rob.moveWheels(0, SPEED_FWD)
+                    rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_SHORT)
                 elif cmd == "TURN_RIGHT":
-                    rob.moveWheels(SPEED_FWD, 0)
+                    rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_SHORT)
                 else:  # STOP o desconocido
                     rob.stopMotors()
 
