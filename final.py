@@ -156,9 +156,9 @@ def apply_ppo_action(rob, action):
     if a == 0:  # Avanzar recto
         rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
     elif a == 1:  # Girar izquierda leve
-        rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_SHORT)
+        rob.moveWheelsByTime(0, 3, CMD_TIME_SHORT)
     elif a == 2:  # Girar derecha leve
-        rob.moveWheelsByTime(SPEED_FWD, 0, CMD_TIME_SHORT)
+        rob.moveWheelsByTime(3, 0, CMD_TIME_SHORT)
     elif a == 3:  # Girar izquierda fuerte
         rob.moveWheelsByTime(0, SPEED_FWD, CMD_TIME_LONG)
     elif a == 4:  # Girar derecha fuerte

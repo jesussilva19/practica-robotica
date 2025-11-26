@@ -5,7 +5,7 @@ import cv2
 import signal
 import sys
 
-IP = "172.20.10.2"  # IP del móvil con la app del Robobo
+IP = "192.168.1.140"  # IP del móvil con la app del Robobo
 
 rob = Robobo(IP)
 video = RoboboVideo(IP)
