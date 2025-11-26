@@ -8,15 +8,12 @@ import sys
 import time
 import numpy as np
 import os
-
-# ================== CONFIG ==================
 IP = "192.168.1.140"       # IP del móvil con la app del Robobo
 
-# Modelos YOLO
-POSE_MODEL_PATH = "yolo11n-pose.pt"   # modelo de pose (más ligero)
-DET_MODEL_PATH  = "yolo11n.pt"        # modelo detección COCO (más ligero)
+POSE_MODEL_PATH = "yolo11n-pose.pt"   # modelo de pose 
+DET_MODEL_PATH  = "yolo11n.pt"        # modelo detección COCO 
 
-IMG_SIZE    = 160        # tamaño de imagen para YOLO (más rápido)
+IMG_SIZE    = 160        # tamaño de imagen para YOLO 
 POSE_CONF   = 0.5
 PHONE_CONF  = 0.5        # umbral para activar PPO
 
@@ -25,7 +22,6 @@ BASE_DIR = os.path.dirname(__file__)
 PPO_MODEL_PATH = os.path.join(BASE_DIR, "practica3", "best_model.zip")
 MAX_PPO_STEPS = 150
 
-# Movimiento robot (coherente con RoboboEnv)
 SPEED_FWD       = 5
 TURN_SPEED      = 5
 CMD_TIME_SHORT  = 2.0
@@ -43,7 +39,7 @@ L_WRIST = 9
 R_WRIST = 10
 
 
-# ================== HELPERS GESTOS ==================
+
 def get_main_person_keypoints(result):
     kps = getattr(result, "keypoints", None)
     if kps is None:
@@ -57,7 +53,7 @@ def get_main_person_keypoints(result):
     if xy.ndim != 3 or xy.shape[-1] != 2 or xy.shape[1] < 11 or xy.shape[0] == 0:
         return None
 
-    # Elegir persona con mayor confianza media
+   
     idx = 0
     conf = getattr(kps, "conf", None)
     if conf is not None:
@@ -110,7 +106,7 @@ def gesture_from_keypoints(kp):
         return "STOP"
 
 
-# ================== HELPERS PPO ==================
+
 def compute_phone_state(det_results, frame_width):
     """
     A partir de las detecciones de YOLO en la cámara del Robobo,
@@ -120,7 +116,7 @@ def compute_phone_state(det_results, frame_width):
     Usamos la posición X del centro del bounding box.
     
     """
-    time.sleep(3)  # evitar problemas de sincronización GPU
+    time.sleep(3)  # evitar problemas de latencia 
     best_conf = 0.0
     best_xcenter = None
     for box in det_results[0].boxes:
@@ -149,10 +145,10 @@ def compute_phone_state(det_results, frame_width):
 
 def apply_ppo_action(rob, action):
     """
-    Aplica una acción {0..5} como en tu RoboboEnv.step, pero en el robot real.
+    Aplica una acción {0..5} como en el robot real.
     """
     a = int(action)
-   # pequeño retardo para evitar comandos muy rápidos
+   
     if a == 0:  # Avanzar recto
         rob.moveWheelsByTime(SPEED_FWD, SPEED_FWD, CMD_TIME_SHORT)
     elif a == 1:  # Girar izquierda leve
@@ -308,7 +304,6 @@ def main():
             else:  # mode == "PPO"
                 rob.moveTiltTo(90, 50)
                 if frame_phone is None:
-                    # Si por lo que sea no tenemos frame, paramos y esperamos
                     rob.stopMotors()
                     if cv2.waitKey(1) & 0xFF == 27:
                         break
