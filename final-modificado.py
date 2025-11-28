@@ -1,3 +1,12 @@
+"""
+PRACTICA 3 - ROBOTICA
+
+Integrantes:
+    - Miguel López López - miguel.lopezl@udc.es
+    - Jesús Silva Vicente- jesus.silva@udc.es
+"""
+
+
 from robobopy_videostream.RoboboVideo import RoboboVideo
 from robobopy.Robobo import Robobo
 from ultralytics import YOLO
@@ -10,8 +19,7 @@ import numpy as np
 import os
 
 # ================== CONFIGURACIÓN ==================
-IP = "192.168.1.140"        # IP del móvil con la app del Robobo
-IP = "localhost"            # para emulador Android en el mismo PC
+IP = "172.20.10.3"        # IP del móvil con la app del Robobo
 
 POSE_MODEL_PATH = "yolo11n-pose.pt"   # modelo de pose 
 DET_MODEL_PATH  = "yolo11n.pt"        # modelo detección COCO 
